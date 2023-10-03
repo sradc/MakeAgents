@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "make_agents"
+name = "make_agent"
 version = "0.0.0"
 description = ""
 authors = ["sradc <sidneyradcliffe@sky.com>"]
 readme = "README.md"
-packages = [{include = "make_agents"}]
+packages = [{include = "make_agent"}]
 license = "Apache-2.0"
 include = [
     "LICENSE",

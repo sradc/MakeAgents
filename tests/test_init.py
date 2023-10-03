@@ -1,5 +1,7 @@
-import make_agents
+import pytest
 
 
 def test_version():
-    assert isinstance(make_agents.__version__, str)
+    # assert that there is an error
+    with pytest.raises(RuntimeError):
+        pass
