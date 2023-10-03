@@ -4,7 +4,7 @@ format:
 	&& poetry run isort --profile black .
 
 test:
-	poetry run python -m pytest --cov=lr_schedules tests
+	poetry run python -m pytest --cov=make_agents tests
 
 # Runs the nb, to generate output / figures
 execute_readme:
