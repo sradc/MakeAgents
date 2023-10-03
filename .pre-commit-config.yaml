@@ -1,0 +1,25 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+    -   id: check-yaml
+        exclude: README.md
+    -   id: end-of-file-fixer
+        exclude: README.md
+    -   id: trailing-whitespace
+        exclude: README.md
+
+- repo: local
+  hooks:
+    - id: format-python
+      name: Python - autoflake, isort, black
+      entry: bash -c 'make format'
+      language: system
+      files: \.(py|ipynb)$
+      pass_filenames: false
+    - id: make-readme
+      name: Generate readme from ipynb...
+      entry: bash -c 'make readme'
+      files: \.(py|ipynb)$|^README\.md$
+      language: system
+      pass_filenames: false

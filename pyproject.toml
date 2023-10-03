@@ -1,0 +1,43 @@
+[tool.poetry]
+name = "make_agents"
+version = "0.0.0"
+description = ""
+authors = ["sradc <sidneyradcliffe@sky.com>"]
+readme = "README.md"
+packages = [{include = "make_agents"}]
+license = "Apache-2.0"
+include = [
+    "LICENSE",
+    "README.md",
+]
+homepage = "https://github.com/sradc/make_agents"
+repository = "https://github.com/sradc/make_agents"
+
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+importlib-metadata = "^6.8.0"
+
+
+[tool.poetry.group.dev.dependencies]
+matplotlib = "^3.7.2"
+black = {extras = ["jupyter"], version = "^23.7.0"}
+isort = "^5.12.0"
+autoflake = "^2.2.0"
+ipykernel = "^6.25.1"
+numpy = "^1.25.2"
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
+pre-commit = "^3.3.3"
+python-semantic-release = "^8.0.7"
+nbconvert = "^7.7.4"
+
+[tool.semantic_release]
+version_toml = [
+    "pyproject.toml:tool.poetry.version",
+]
+build_command = "poetry build"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
