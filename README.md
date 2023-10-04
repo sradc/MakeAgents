@@ -67,7 +67,7 @@ display(ma.draw_graph(agent_graph))
 messages_init = [
     {
         "role": "system",
-        "content": f"Get the first and last name of the user.",
+        "content": "Get the first and last name of the user.",
     }
 ]
 
