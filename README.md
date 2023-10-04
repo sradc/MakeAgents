@@ -13,7 +13,9 @@
 MakeAgents is a micro framework for creating LLM-powered agents.
 It consists of tools and a paridigm for creating agents.
 
-## Example 1: A simple conversational agent
+## Quickstart examples
+
+### Example 1: A simple conversational agent
 
 
 ```python
@@ -21,23 +23,15 @@ import json
 import pprint
 
 import make_agents as ma
+
 from pydantic import BaseModel, Field
 ```
 
-### Define the functions the agent will use
-
-Functions are used to give the agent capabilities, as well as to determine it's behaviour.
-
-Each LLM function:
-- Is decorated with `@ma.llm_func`
-- Accepts at most one argument
-- If there is an argument, it is annotated using Pydantic
-- Has a docstring (not mandatory, but recommended)
-
-The name of the function, the Pydantic type hint, and the docstring will be given to the LLM, and can be considered to be part of the prompt. The LLM will use the information to decide which functions to use, and the inputs to provide.
-
 
 ```python
+# Define the functions the agent will use
+
+
 class MessageUserArg(BaseModel):
     question: str = Field(description="Question to ask user")
 
@@ -60,35 +54,23 @@ class LogNameArg(BaseModel):
 def log_name(arg: LogNameArg):
     """Log the name of the user. Only do this if you are certain."""
     return {"first_name": arg.first_name, "last_name": arg.last_name}
-```
-
-### Define the agent, as a graph of functions
 
 
-```python
+# Define the agent, as a graph of functions
 agent_graph = {
     ma.Start: [message_user],
     message_user: [message_user, log_name],
 }
 display(ma.draw_graph(agent_graph))
-```
 
-
-    
-![png](https://raw.githubusercontent.com/sradc/MakeAgents/master/README_files/README_6_0.png)
-    
-
-
-### Initialise the messages with a system prompt, and run the agent
-
-
-```python
+# Initialise the message stack with a system prompt
 messages_init = [
     {
         "role": "system",
         "content": f"Get the first and last name of the user.",
     }
 ]
+
 # Run the agent
 for messages in ma.run_agent(agent_graph, messages_init):
     pprint.pprint(messages[-1], indent=2)
@@ -96,6 +78,12 @@ for messages in ma.run_agent(agent_graph, messages_init):
 print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
 ```
 
+
+    
+![png](https://raw.githubusercontent.com/sradc/MakeAgents/master/README_files/README_3_0.png)
+    
+
+
     { 'content': None,
       'function_call': { 'arguments': '{"next_function": "message_user"}',
                          'name': 'select_next_func'},
@@ -106,29 +94,13 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
       'role': 'function'}
     
     { 'content': None,
-      'function_call': { 'arguments': '{"question": "Please enter your first '
-                                      'name."}',
+      'function_call': { 'arguments': '{"question": "What is your first name?"}',
                          'name': 'message_user'},
       'role': 'assistant'}
     
-    {'content': '"Nope"', 'name': 'message_user', 'role': 'function'}
-    
-    { 'content': None,
-      'function_call': { 'arguments': '{"next_function": "message_user"}',
-                         'name': 'select_next_func'},
-      'role': 'assistant'}
-    
-    { 'content': '{"next_function": "message_user"}',
-      'name': 'select_next_func',
+    { 'content': '"Uh, well, it\'s Bill"',
+      'name': 'message_user',
       'role': 'function'}
-    
-    { 'content': None,
-      'function_call': { 'arguments': '{"question": "Please enter your first '
-                                      'name."}',
-                         'name': 'message_user'},
-      'role': 'assistant'}
-    
-    {'content': '"It\'s Bill"', 'name': 'message_user', 'role': 'function'}
     
     { 'content': None,
       'function_call': { 'arguments': '{"next_function": "message_user"}',
@@ -140,12 +112,13 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
       'role': 'function'}
     
     { 'content': None,
-      'function_call': { 'arguments': '{"question": "Please enter your last '
-                                      'name."}',
+      'function_call': { 'arguments': '{"question": "And what is your last name?"}',
                          'name': 'message_user'},
       'role': 'assistant'}
     
-    {'content': '"It\'s BoBaggins"', 'name': 'message_user', 'role': 'function'}
+    { 'content': '"And that... would be BoBaggins"',
+      'name': 'message_user',
+      'role': 'function'}
     
     { 'content': None,
       'function_call': { 'arguments': '{"next_function": "log_name"}',
@@ -158,8 +131,8 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
     
     { 'content': None,
       'function_call': { 'arguments': '{\n'
-                                      '  "first_name": "Bill",\n'
-                                      '  "last_name": "BoBaggins"\n'
+                                      '"first_name": "Bill",\n'
+                                      '"last_name": "BoBaggins"\n'
                                       '}',
                          'name': 'log_name'},
       'role': 'assistant'}
