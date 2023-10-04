@@ -13,7 +13,6 @@
 MakeAgents is a micro framework for creating LLM-powered agents.
 It consists of tools and a paridigm for creating agents.
 
-
 ## Example 1: A simple conversational agent
 
 
@@ -24,6 +23,18 @@ import pprint
 import make_agents as ma
 from pydantic import BaseModel, Field
 ```
+
+### Define the functions the agent will use
+
+Functions are used to give the agent capabilities, as well as to determine it's behaviour.
+
+Each LLM function:
+- Is decorated with `@ma.llm_func`
+- Accepts at most one argument
+- If there is an argument, it is annotated using Pydantic
+- Has a docstring (not mandatory, but recommended)
+
+The name of the function, the Pydantic type hint, and the docstring will be given to the LLM, and can be considered to be part of the prompt. The LLM will use the information to decide which functions to use, and the inputs to provide.
 
 
 ```python
@@ -49,14 +60,12 @@ class LogNameArg(BaseModel):
 def log_name(arg: LogNameArg):
     """Log the name of the user. Only do this if you are certain."""
     return {"first_name": arg.first_name, "last_name": arg.last_name}
+```
+
+### Define the agent, as a graph of functions
 
 
-messages_init = [
-    {
-        "role": "system",
-        "content": f"Get the first and last name of the user.",
-    }
-]
+```python
 agent_graph = {
     ma.Start: [message_user],
     message_user: [message_user, log_name],
@@ -66,12 +75,21 @@ display(ma.draw_graph(agent_graph))
 
 
     
-![png](https://raw.githubusercontent.com/sradc/MakeAgents/master/README_files/README_3_0.png)
+![png](https://raw.githubusercontent.com/sradc/MakeAgents/master/README_files/README_6_0.png)
     
 
 
+### Initialise the messages with a system prompt, and run the agent
+
 
 ```python
+messages_init = [
+    {
+        "role": "system",
+        "content": f"Get the first and last name of the user.",
+    }
+]
+# Run the agent
 for messages in ma.run_agent(agent_graph, messages_init):
     pprint.pprint(messages[-1], indent=2)
     print()

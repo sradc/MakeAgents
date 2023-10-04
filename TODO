@@ -5,5 +5,8 @@
 - document ways to stop / wait for confirmation before running functions (e.g. when powerful)
 - more unit test coverage
 - squash / rebase branch before merging into main, then archive
+- docs
+- functions with no args
+- tutorials
 
 - [x] ability to configure completion, e.g. model etc.
