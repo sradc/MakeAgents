@@ -9,9 +9,14 @@ test:
 # Runs the nb, to generate output / figures
 execute_readme:
 	poetry run python -m nbconvert --to notebook --execute README.ipynb --output README.tmp.ipynb
+# Note turned off execute_readme dependency for now, when running `readme`,
+# because the `input(..)` stuff prevents it from working
+# remember to use the tempfile when restore, e.g:
+# readme
+# poetry run python -m nbconvert --to markdown --output README.md README.tmp.ipynb  \
 
-readme: execute_readme
-	poetry run python -m nbconvert --to markdown --output README.md README.tmp.ipynb  \
+readme:
+	poetry run python -m nbconvert --to markdown --output README.md README.ipynb  \
 	&& poetry run python scripts/replace_readme_image_links.py
 
 # run semantic release, publish to github + pypi
