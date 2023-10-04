@@ -24,3 +24,125 @@ Notes:
 - Run `poetry install`
 - Run `poetry run pre-commit install`
 
+
+## Example 1: A simple conversational agent
+
+
+```python
+import json
+import pprint
+
+import make_agents as ma
+from pydantic import BaseModel, Field
+```
+
+
+```python
+class MessageUserArg(BaseModel):
+    question: str = Field(description="Question to ask user")
+
+
+@ma.llm_func
+def message_user(arg: MessageUserArg):
+    """Send the user a message, and get their response."""
+    response = ""
+    while response == "":
+        response = input(arg.question).strip()
+    return response
+
+
+class LogNameArg(BaseModel):
+    first_name: str = Field(description="User's first name")
+    last_name: str = Field(description="User's last name")
+
+
+@ma.llm_func
+def log_name(arg: LogNameArg):
+    """Log the name of the user. Only do this if you are certain."""
+    return {"first_name": arg.first_name, "last_name": arg.last_name}
+
+
+messages_init = [
+    {
+        "role": "system",
+        "content": f"Get the first and last name of the user. Log them only when you are confident they are correct.",
+    }
+]
+agent_graph = {
+    ma.Start: [message_user],
+    message_user: [message_user, log_name],
+}
+display(ma.draw_graph(agent_graph))
+```
+
+
+    
+![png](https://raw.githubusercontent.com/sradc/MakeAgents/master/README_files/README_3_0.png)
+    
+
+
+
+```python
+for messages in ma.run_agent(agent_graph, messages_init):
+    pprint.pprint(messages[-1], indent=2)
+    print()
+print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
+```
+
+    { 'content': None,
+      'function_call': { 'arguments': '{"next_function": "message_user"}',
+                         'name': 'select_next_func'},
+      'role': 'assistant'}
+    
+    { 'content': '{"next_function": "message_user"}',
+      'name': 'select_next_func',
+      'role': 'function'}
+    
+    { 'content': None,
+      'function_call': { 'arguments': '{"question": "Please enter your first '
+                                      'name."}',
+                         'name': 'message_user'},
+      'role': 'assistant'}
+    
+    {'content': '"Bill"', 'name': 'message_user', 'role': 'function'}
+    
+    { 'content': None,
+      'function_call': { 'arguments': '{"next_function": "message_user"}',
+                         'name': 'select_next_func'},
+      'role': 'assistant'}
+    
+    { 'content': '{"next_function": "message_user"}',
+      'name': 'select_next_func',
+      'role': 'function'}
+    
+    { 'content': None,
+      'function_call': { 'arguments': '{"question": "Please enter your last '
+                                      'name."}',
+                         'name': 'message_user'},
+      'role': 'assistant'}
+    
+    { 'content': '"Well, my last name is BoBagginz"',
+      'name': 'message_user',
+      'role': 'function'}
+    
+    { 'content': None,
+      'function_call': { 'arguments': '{"next_function": "log_name"}',
+                         'name': 'select_next_func'},
+      'role': 'assistant'}
+    
+    { 'content': '{"next_function": "log_name"}',
+      'name': 'select_next_func',
+      'role': 'function'}
+    
+    { 'content': None,
+      'function_call': { 'arguments': '{"first_name": "Bill", "last_name": '
+                                      '"BoBagginz"}',
+                         'name': 'log_name'},
+      'role': 'assistant'}
+    
+    { 'content': '{"first_name": "Bill", "last_name": "BoBagginz"}',
+      'name': 'log_name',
+      'role': 'function'}
+    
+    Retrieved user_name: {'first_name': 'Bill', 'last_name': 'BoBagginz'}
+
