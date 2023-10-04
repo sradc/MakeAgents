@@ -41,12 +41,10 @@ def test_llm_func():
         def example_func(arg: ExampleFuncArg, arg2: ExampleFuncArg):
             pass
 
-    # Check that the function raises an error if there are no parameters
-    with pytest.raises(ValueError):
-
-        @llm_func
-        def example_func():
-            pass
+    # Check that the function doesn't raise an error if there are no parameters
+    @llm_func
+    def example_func():
+        pass
 
     # Check that the function raises an error if type hint not pydantic
     with pytest.raises(ValueError):
