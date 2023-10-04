@@ -2,7 +2,7 @@
 
 `pip install make_agents`
 
-[![](https://github.com/sradc/make_agents/workflows/Python%20package/badge.svg)](https://github.com/sradc/make_agents/commits/)
+[![](https://github.com/sradc/make_agents/workflows/Python%20package/badge.svg?branch=main)](https://github.com/sradc/make_agents/commits/)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/sradc/MakeAgents/master/README_files/make_agents_logo.jpg" width=256>
