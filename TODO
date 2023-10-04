@@ -3,3 +3,5 @@
 - ability to configure completion, e.g. model etc.
 - ability to check number of tokens with tiktoken
 - summariser / reducer (e.g. run before making llm call)
+- ways to stop / wait for confirmation before running functions (e.g. when powerful)
+- squash / rebase branch before merging into main, then archive

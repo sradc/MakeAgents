@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import openai
 from tenacity import (
     retry,
@@ -8,14 +6,16 @@ from tenacity import (
     wait_random_exponential,
 )
 
-# TODO: move to config
-openai.api_key = Path("openai.key").read_text().strip()
 
+def get_completion(model: str = "gpt-3.5-turbo", **kwargs) -> callable:
+    @retry(
+        retry=retry_if_exception_type(
+            (openai.error.Timeout, openai.error.RateLimitError)
+        ),
+        wait=wait_random_exponential(min=0, max=60),
+        stop=stop_after_attempt(6),
+    )
+    def completion(**kwargs2):
+        return openai.ChatCompletion.create(model=model, **kwargs, **kwargs2)
 
-@retry(
-    retry=retry_if_exception_type((openai.error.Timeout, openai.error.RateLimitError)),
-    wait=wait_random_exponential(min=0, max=60),
-    stop=stop_after_attempt(6),
-)
-def completion(**kwargs):
-    return openai.ChatCompletion.create(**kwargs)
+    return completion
