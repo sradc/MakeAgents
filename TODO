@@ -1,0 +1,5 @@
+- more examples (with some api call stuff, e.g. to search engines, etc.)
+- gifs for the examples
+- ability to configure completion, e.g. model etc.
+- ability to check number of tokens with tiktoken
+- summariser / reducer (e.g. run before making llm call)
