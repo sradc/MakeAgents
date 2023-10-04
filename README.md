@@ -11,18 +11,7 @@
 # MakeAgents
 
 MakeAgents is a micro framework for creating LLM-powered agents.
-It consists of a paridigm for creating agents, along with tools to make it work.
-
-
-Notes:
-- Prompts are very important. The `llm_func` function names, Pydantic models and docstrings are all "part of the prompt".
-
-
-### Dev setup
-
-- Clone the repo and `cd` into it
-- Run `poetry install`
-- Run `poetry run pre-commit install`
+It consists of tools and a paridigm for creating agents.
 
 
 ## Example 1: A simple conversational agent
@@ -65,7 +54,7 @@ def log_name(arg: LogNameArg):
 messages_init = [
     {
         "role": "system",
-        "content": f"Get the first and last name of the user. Log them only when you are confident they are correct.",
+        "content": f"Get the first and last name of the user.",
     }
 ]
 agent_graph = {
@@ -104,7 +93,24 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
                          'name': 'message_user'},
       'role': 'assistant'}
     
-    {'content': '"Bill"', 'name': 'message_user', 'role': 'function'}
+    {'content': '"Nope"', 'name': 'message_user', 'role': 'function'}
+    
+    { 'content': None,
+      'function_call': { 'arguments': '{"next_function": "message_user"}',
+                         'name': 'select_next_func'},
+      'role': 'assistant'}
+    
+    { 'content': '{"next_function": "message_user"}',
+      'name': 'select_next_func',
+      'role': 'function'}
+    
+    { 'content': None,
+      'function_call': { 'arguments': '{"question": "Please enter your first '
+                                      'name."}',
+                         'name': 'message_user'},
+      'role': 'assistant'}
+    
+    {'content': '"It\'s Bill"', 'name': 'message_user', 'role': 'function'}
     
     { 'content': None,
       'function_call': { 'arguments': '{"next_function": "message_user"}',
@@ -121,9 +127,7 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
                          'name': 'message_user'},
       'role': 'assistant'}
     
-    { 'content': '"Well, my last name is BoBagginz"',
-      'name': 'message_user',
-      'role': 'function'}
+    {'content': '"It\'s BoBaggins"', 'name': 'message_user', 'role': 'function'}
     
     { 'content': None,
       'function_call': { 'arguments': '{"next_function": "log_name"}',
@@ -135,14 +139,28 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
       'role': 'function'}
     
     { 'content': None,
-      'function_call': { 'arguments': '{"first_name": "Bill", "last_name": '
-                                      '"BoBagginz"}',
+      'function_call': { 'arguments': '{\n'
+                                      '  "first_name": "Bill",\n'
+                                      '  "last_name": "BoBaggins"\n'
+                                      '}',
                          'name': 'log_name'},
       'role': 'assistant'}
     
-    { 'content': '{"first_name": "Bill", "last_name": "BoBagginz"}',
+    { 'content': '{"first_name": "Bill", "last_name": "BoBaggins"}',
       'name': 'log_name',
       'role': 'function'}
     
-    Retrieved user_name: {'first_name': 'Bill', 'last_name': 'BoBagginz'}
+    Retrieved user_name: {'first_name': 'Bill', 'last_name': 'BoBaggins'}
+
+
+### Notes:
+
+Prompting has a big impact on the performance of the agent. The `llm_func` function names, Pydantic models and docstrings can all be considered part of the prompt.
+
+
+### Dev setup
+
+- Clone the repo and `cd` into it
+- Run `poetry install`
+- Run `poetry run pre-commit install`
 
