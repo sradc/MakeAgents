@@ -1,6 +1,8 @@
+.PHONY: docs
+
 format:
 	poetry run autoflake --remove-all-unused-imports --recursive --remove-unused-variables --in-place .  \
-	&& poetry run black --line-length 90 .  \
+	&& poetry run black --preview --line-length 90 .  \
 	&& poetry run isort --profile black .
 
 test:
@@ -18,6 +20,16 @@ execute_readme:
 readme:
 	poetry run python -m nbconvert --to markdown --output README.md README.ipynb  \
 	&& poetry run python scripts/replace_readme_image_links.py
+
+docs:
+	cd docs_creator  \
+	&& $(MAKE) html  \
+	&& rm -rf ../docs  \
+	&& mkdir ../docs  \
+	&& cp -r build/html/* ../docs
+
+serve_docs: docs
+	cd docs && python -m http.server
 
 # run semantic release, publish to github + pypi
 release:

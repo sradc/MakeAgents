@@ -1,5 +1,18 @@
 - more examples (with some api call stuff, e.g. to search engines, etc.)
-- gifs for the examples
+    - no system prompt example, entirely do through functions,
+        (or the system prompt says that),
+        then start with an instruction_function(),
+        which must be called at the start.
+        - could do that as the default :O :D.
+            then default to empty messages initially :O,
+            leaving the option of passing a system prompt as normal.
+    - RAG example, chat
+    - SQL example, chat
+    - Autonomous example
+    - getting name first, then getting phone number (or something)
+    - scraping wikipedia/duckduckgo, then doing something else (idk)
+    - writing code, and searching stackoverflow if stuck
+- gifs for the examples (record in console)
 - ability to check number of tokens with tiktoken
 - summariser / reducer (e.g. run before making llm call)
 - document ways to stop / wait for confirmation before running functions (e.g. when powerful)
@@ -8,5 +21,7 @@
 - docs
 - functions with no args
 - tutorials
+- license in scripts and check
+- funcs with no args
 
 - [x] ability to configure completion, e.g. model etc.

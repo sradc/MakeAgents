@@ -1,8 +1,8 @@
 import inspect
-import io
 import json
 from copy import deepcopy
 from enum import Enum
+from typing import Iterator, Optional
 
 from pydantic import BaseModel, Field
 
@@ -10,42 +10,67 @@ from make_agents.gpt import get_completion
 
 default_completion = get_completion()
 
+default_system_prompt = """You are a helpful assistant. Pay attention to the functions that you have been given access to at a given point in time, and try to help the user achieve their goal."""
 
-def llm_func(func):
-    # Restrict `func` to have exactly 1 parameter, that must be annotated with a pydantic model,
-    # to keep the logic simple.
-    # We'll just attach metadata to the function, so it can still be used as normal.
+
+def action(func: callable) -> callable:
+    """A decorator to create *action functions* — functions to be used by the agent.
+    An action function must have *at most* one parameter, which must be annotated with a Pydantic model.
+
+    Note that the following should be considered part of the "prompt" for the agent:
+
+    - The name of the function
+
+    - The Pydantic model, if the function has a parameter
+
+    - The function's docstring (don't annotate the parameter in the docstring, use the Pydantic model for this)
+
+    Parameters
+    ----------
+    func : callable
+        The function to be decorated.
+
+    Returns
+    -------
+    callable
+        The same function, with metadata attached.
+
+    Raises
+    ------
+    ValueError
+        If the function has more than one parameter, or if the parameter is not annotated with a Pydantic model.
+    """
     parameters = inspect.signature(func).parameters
     if len(parameters) == 0:
-        # A func with no parameters will be called without asking the LLM for args,
-        # but we still want the name and description to be available, and we will attach the response.
         func.description_for_llm = {
             "name": func.__name__,
             "description": func.__doc__,
             "parameters": None,
         }
     elif len(parameters) == 1:
-        pydantic_model = get_llm_func_pydantic_model(func)
         func.description_for_llm = {
             "name": func.__name__,
             "description": func.__doc__,
-            "parameters": pydantic_model.model_json_schema(),
+            "parameters": get_pydantic_model_from_action_func(func).model_json_schema(),
         }
     else:
-        raise ValueError(f"Function {func.__name__} must have exactly 1 parameter.")
+        raise ValueError(f"Function {func.__name__} must have at most one parameter.")
     return func
 
 
-def get_llm_func_pydantic_model(func) -> BaseModel:
-    (arg,) = inspect.signature(func).parameters.values()
-    if not getattr(arg.annotation, "model_json_schema", None):
+def get_pydantic_model_from_action_func(action_func) -> BaseModel:
+    (arg,) = inspect.signature(action_func).parameters.values()
+    try:
+        arg.annotation.model_json_schema
+    except AttributeError:
         raise ValueError(
-            f"The parameter of {func.__name__} must be annotated with a pydantic model."
+            f"The parameter of {action_func.__name__} must be annotated with a pydantic"
+            " model."
         )
     return arg.annotation
 
 
-def select_next_func_factory(functions: list[callable]):
+def select_next_action_factory(functions: list[callable]):
     class SelectNextFuncArg(BaseModel):
         next_function: Enum(
             "function_names",
@@ -56,18 +81,20 @@ def select_next_func_factory(functions: list[callable]):
         return {"next_function": arg.next_function.value}
 
     select_next_func.__doc__ = (
-        "Given the following functions, choose the one that will most help you achieve your goal: "
+        "Given the following functions, choose the one that will most help you achieve"
+        " your goal: "
         + ", ".join([json.dumps(description(x)) for x in functions])
     )
-    return llm_func(select_next_func)
+    return action(select_next_func)
 
 
-def description(llm_func: callable) -> dict:
+def description(action_func: callable) -> dict:
     try:
-        return llm_func.description_for_llm
+        return action_func.description_for_llm
     except AttributeError:
         raise ValueError(
-            f"Missing metadata. Has function {llm_func.__name__} been decorated with `llm_func`?"
+            f"Missing metadata. Has function {action_func.__name__} been decorated with"
+            f" `{action.__name__}`?"
         )
 
 
@@ -82,7 +109,7 @@ def get_func_input_from_llm(
         },  # force the function to be called
     )
     # Validate the arg
-    pydantic_model = get_llm_func_pydantic_model(llm_func)
+    pydantic_model = get_pydantic_model_from_action_func(llm_func)
     func_arg = pydantic_model(
         **json.loads(response.choices[0].message.function_call.arguments)
     )
@@ -104,16 +131,40 @@ def run_func_for_llm(llm_func: callable, arg):
 
 
 class Start:
-    pass
+    """Used to mark the start of the action graph."""
 
 
 def run_agent(
-    agent_graph: dict[callable, list[callable]],
-    messages_init: list[dict],
-    completion: callable = default_completion,
-):
-    messages = deepcopy(messages_init)
-    options = agent_graph[Start]
+    action_graph: dict[callable, list[callable]],
+    messages_init: Optional[list[dict]] = None,
+    completion: Optional[callable] = default_completion,
+) -> Iterator[list[dict[str, str]]]:
+    """Run an agent. This is a generator that yields the list of messages after each step.
+    Be mindful that the yielded messages are mutable, allowing them to be modified in place,
+    (make copies if you want to avoid this).
+
+    Parameters
+    ----------
+    action_graph : dict[callable, list[callable]]
+        The graph of actions that the agent can take.
+    messages_init : Optional[list[dict]], optional
+        Optionally initialise the list of messages, e.g. to specify a custom system prompt.
+        If not provided, the default system prompt will be used.
+    completion : Optional[callable], optional
+        The function that will be used to get completions from the LLM.
+
+    Yields
+    ------
+    Iterator[list[dict[str, str]]]
+        At each step, the list of messages is yielded,
+        i.e. the same list that was yielded in the previous step, with one more message appended.
+    """
+    messages = (
+        deepcopy(messages_init)
+        if messages_init
+        else [{"role": "system", "content": default_system_prompt}]
+    )
+    options = action_graph[Start]
     while True:
         # Decide which function to run next
         if len(options) == 1:
@@ -141,7 +192,7 @@ def run_agent(
             yield messages
         else:
             # llm decides the next function
-            select_next_func = select_next_func_factory(options)
+            select_next_func = select_next_action_factory(options)
             func_arg_message, func_arg = get_func_input_from_llm(
                 messages, select_next_func, completion
             )
@@ -165,26 +216,6 @@ def run_agent(
         func_result_message, func_result = run_func_for_llm(current_node, func_arg)
         messages.append(func_result_message)
         yield messages
-        options = agent_graph.get(current_node, None)
+        options = action_graph.get(current_node, None)
         if not options:
             break
-
-
-def draw_graph(agent_graph: dict[callable, list[callable]]):
-    try:
-        import graphviz
-        from PIL import Image
-    except ImportError:
-        raise ImportError("You need to install graphviz and PIL to use this function.")
-    dot = graphviz.Digraph(comment="graph", format="png", graph_attr={"dpi": "120"})
-    for node in agent_graph:
-        dot.node(node.__name__, node.__name__)
-    for node, children in agent_graph.items():
-        if isinstance(children, list):
-            for child in children:
-                dot.edge(node.__name__, child.__name__)
-        else:
-            dot.edge(node.__name__, children.__name__)
-    gvz_graph = dot.pipe(format="png", engine="neato", renderer="cairo")
-    image = Image.open(io.BytesIO(gvz_graph), mode="r", formats=["png"]).convert("RGB")
-    return image

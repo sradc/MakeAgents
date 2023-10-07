@@ -3,19 +3,26 @@ repos:
     rev: v2.3.0
     hooks:
     -   id: check-yaml
-        exclude: README.md
+        exclude: README.md|docs/
     -   id: end-of-file-fixer
-        exclude: README.md
+        exclude: README.md|docs/
     -   id: trailing-whitespace
-        exclude: README.md
+        exclude: README.md|docs/
 
 - repo: local
   hooks:
-    - id: format-python
+    - id: make-format
       name: Python - autoflake, isort, black
       entry: bash -c 'make format'
       language: system
       files: \.(py|ipynb)$
+      pass_filenames: false
+    - id: make-docs
+      name: Generate docs using Sphinx
+      entry: bash -c 'make docs'
+      # track docs/ but ignore docs/_sources
+      files: ^docs/((?!_sources).)*$
+      language: system
       pass_filenames: false
     - id: make-readme
       name: Generate readme from ipynb...
