@@ -71,23 +71,22 @@ def action(func: callable) -> callable:
     return func
 
 
-def get_pydantic_model_from_action_func(action_func) -> BaseModel:
-    (arg,) = inspect.signature(action_func).parameters.values()
+def get_pydantic_model_from_action_func(func: callable) -> BaseModel:
+    (arg,) = inspect.signature(func).parameters.values()
     try:
         arg.annotation.model_json_schema
     except AttributeError:
         raise ValueError(
-            f"The parameter of {action_func.__name__} must be annotated with a pydantic"
-            " model."
+            f"The parameter of {func.__name__} must be annotated with a pydantic model."
         )
     return arg.annotation
 
 
-def select_next_action_factory(functions: list[callable]):
+def select_next_action_factory(options: list[callable]) -> callable:
     class SelectNextFuncArg(BaseModel):
         next_function: Enum(
             "function_names",
-            {description(x)["name"]: description(x)["name"] for x in functions},
+            {description(x)["name"]: description(x)["name"] for x in options},
         ) = Field(..., description="Name of the function to call next")
 
     def select_next_func(arg: SelectNextFuncArg) -> str:
@@ -96,7 +95,7 @@ def select_next_action_factory(functions: list[callable]):
     select_next_func.__doc__ = (
         "Given the following functions, choose the one that will most help you achieve"
         " your goal: "
-        + ", ".join([json.dumps(description(x)) for x in functions])
+        + ", ".join([json.dumps(description(x)) for x in options])
     )
     return action(select_next_func)
 
@@ -111,18 +110,16 @@ def description(action_func: callable) -> dict:
         )
 
 
-def get_func_input_from_llm(
-    messages: list[dict], llm_func: callable, completion: callable
-):
+def get_func_input_from_llm(messages: list[dict], func: callable, completion: callable):
     response = completion(
         messages=messages,
-        functions=[description(llm_func)],
+        functions=[description(func)],
         function_call={
-            "name": description(llm_func)["name"]
+            "name": description(func)["name"]
         },  # force the function to be called
     )
     # Validate the arg
-    pydantic_model = get_pydantic_model_from_action_func(llm_func)
+    pydantic_model = get_pydantic_model_from_action_func(func)
     func_arg = pydantic_model(
         **json.loads(response.choices[0].message.function_call.arguments)
     )
@@ -133,11 +130,11 @@ def get_func_input_from_llm(
     return func_arg_message, func_arg
 
 
-def run_func_for_llm(llm_func: callable, arg):
-    func_result = llm_func(arg) if arg else llm_func()
+def run_func_for_llm(func: callable, arg: Optional[BaseModel]):
+    func_result = func(arg) if arg else func()
     func_result_message = {
         "role": "function",
-        "name": llm_func.description_for_llm["name"],
+        "name": func.description_for_llm["name"],
         "content": json.dumps(func_result),
     }
     return func_result_message, func_result
@@ -147,10 +144,15 @@ class Start:
     """Used to mark the start of the action graph."""
 
 
+def identity(x):
+    return x
+
+
 def run_agent(
     action_graph: dict[callable, list[callable]],
     messages_init: Optional[list[dict]] = None,
     completion: Optional[callable] = default_completion,
+    pre_action_callback: Optional[callable] = identity,
 ) -> Iterator[list[dict[str, str]]]:
     """Run an agent. This is a generator that yields the list of messages after each step.
     Be mindful that the yielded messages are mutable, allowing them to be modified in place,
@@ -165,6 +167,11 @@ def run_agent(
         If not provided, the default system prompt will be used.
     completion : Optional[callable], optional
         The function that will be used to get completions from the LLM.
+    pre_action_callback : Optional[callable], optional
+        This function will be called before each action is taken.
+        It will be passed the list of messages, and can modify it in place.
+        Can be used for, e.g. reducing the list of messages to only the most recent ones,
+        or reducing the list by summarising, etc.
 
     Yields
     ------
@@ -181,39 +188,45 @@ def run_agent(
     while True:
         # Decide which function to run next
         if len(options) == 1:
+            # only one option, don't need to ask llm
             current_node = options[0]
         else:
             # llm decides the next function
+            pre_action_callback(messages)
             select_next_func = select_next_action_factory(options)
             func_arg_message, func_arg = get_func_input_from_llm(
                 messages, select_next_func, completion
             )
             messages.append(func_arg_message)
-            yield messages
+            yield deepcopy(messages)
+            pre_action_callback(messages)
             func_result_message, func_result = run_func_for_llm(
                 select_next_func, func_arg
             )
             messages.append(func_result_message)
-            yield messages
+            yield deepcopy(messages)
             next_function = func_result["next_function"]
             current_node = next(
                 x for x in options if description(x)["name"] == next_function
             )
+        # Run the function
         if description(current_node)["parameters"]:
             # llm decides the arg
+            pre_action_callback(messages)
             func_arg_message, func_arg = get_func_input_from_llm(
                 messages, current_node, completion
             )
             messages.append(func_arg_message)
-            yield messages
+            yield deepcopy(messages)
             func_result_message, func_result = run_func_for_llm(current_node, func_arg)
             messages.append(func_result_message)
-            yield messages
+            yield deepcopy(messages)
         else:
             # no arg, just run the function directly
+            pre_action_callback(messages)
             func_result_message, func_result = run_func_for_llm(current_node, None)
             messages.append(func_result_message)
-            yield messages
+            yield deepcopy(messages)
         options = action_graph.get(current_node, None)
         if not options:
             break
