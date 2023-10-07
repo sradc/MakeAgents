@@ -81,9 +81,7 @@ action_graph = {
 display(ma.bonus.draw_graph(action_graph))
 
 # Run the agent
-for messages in ma.run_agent(
-    action_graph, completion=ma.gpt.get_completion_func(model="gpt-3.5-turbo")
-):
+for messages in ma.run_agent(action_graph):
     # `messages` contains the whole message stack, so just print the most recent message
     pprint.pprint(messages[-1], indent=2)
     print()
@@ -108,9 +106,7 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
                          'name': 'message_user'},
       'role': 'assistant'}
     
-    { 'content': '"My first name is Fry"',
-      'name': 'message_user',
-      'role': 'function'}
+    {'content': '"It\'s Bob"', 'name': 'message_user', 'role': 'function'}
     
     { 'content': None,
       'function_call': { 'arguments': '{\n  "next_function": "message_user"\n}',
@@ -128,7 +124,7 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
                          'name': 'message_user'},
       'role': 'assistant'}
     
-    {'content': '"It\'s Bobarb"', 'name': 'message_user', 'role': 'function'}
+    {'content': '"It\'s Bill"', 'name': 'message_user', 'role': 'function'}
     
     { 'content': None,
       'function_call': { 'arguments': '{\n  "next_function": "record_name"\n}',
@@ -141,17 +137,17 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
     
     { 'content': None,
       'function_call': { 'arguments': '{\n'
-                                      '  "first_name": "Fry",\n'
-                                      '  "last_name": "Bobarb"\n'
+                                      '  "first_name": "Bob",\n'
+                                      '  "last_name": "Bill"\n'
                                       '}',
                          'name': 'record_name'},
       'role': 'assistant'}
     
-    { 'content': '{"first_name": "Fry", "last_name": "Bobarb"}',
+    { 'content': '{"first_name": "Bob", "last_name": "Bill"}',
       'name': 'record_name',
       'role': 'function'}
     
-    Retrieved user_name: {'first_name': 'Fry', 'last_name': 'Bobarb'}
+    Retrieved user_name: {'first_name': 'Bob', 'last_name': 'Bill'}
 
 
 ### Notes:
