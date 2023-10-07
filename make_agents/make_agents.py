@@ -221,7 +221,15 @@ def run_agent(
             messages.append(func_result_message)
             yield deepcopy(messages)
         else:
-            # no arg, just run the function directly
+            # no arg, act as if LLM has been asked for an arg, so user has chance to confirm / interrupt action
+            messages.append(
+                {
+                    "role": "function",
+                    "name": description(current_node)["name"],
+                    "content": "[function has no parameters]",
+                }
+            )
+            yield deepcopy(messages)
             pre_action_callback(messages)
             func_result_message, func_result = run_func_for_llm(current_node, None)
             messages.append(func_result_message)
