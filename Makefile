@@ -26,7 +26,8 @@ docs:
 	&& $(MAKE) html  \
 	&& rm -rf ../docs  \
 	&& mkdir ../docs  \
-	&& cp -r build/html/* ../docs
+	&& cp -r build/html/* ../docs  \
+	&& touch ../docs/.nojekyll
 
 serve_docs: docs
 	cd docs && python -m http.server

@@ -13,15 +13,17 @@
     - scraping wikipedia/duckduckgo, then doing something else (idk)
     - writing code, and searching stackoverflow if stuck
 - gifs for the examples (record in console)
-- ability to check number of tokens with tiktoken
-- summariser / reducer (e.g. run before making llm call)
 - document ways to stop / wait for confirmation before running functions (e.g. when powerful)
 - more unit test coverage
 - squash / rebase branch before merging into main, then archive
-- docs
 - functions with no args
 - tutorials
 - license in scripts and check
-- funcs with no args
+- configure docs dir in github
 
+- ability to check number of tokens with tiktoken
+- summariser / reducer (e.g. run before making llm call)
+
+- [x] doc generation using sphinx
 - [x] ability to configure completion, e.g. model etc.
+- [x] funcs with no args
