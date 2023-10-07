@@ -13,17 +13,21 @@
     - scraping wikipedia/duckduckgo, then doing something else (idk)
     - writing code, and searching stackoverflow if stuck
 - gifs for the examples (record in console)
-- document ways to stop / wait for confirmation before running functions (e.g. when powerful)
 - more unit test coverage
-- squash / rebase branch before merging into main, then archive
-- functions with no args
-- tutorials
-- license in scripts and check
-- configure docs dir in github
 
+
+- tutorial notebook
+    - document ways to stop / wait for confirmation before running functions (e.g. when powerful)
+- set docs dir in github to `docs`
+
+Low priority:
 - ability to check number of tokens with tiktoken
 - summariser / reducer (e.g. run before making llm call)
+- Check for license in scripts
+- Put tutorial notebook/s into jekyll
 
 - [x] doc generation using sphinx
 - [x] ability to configure completion, e.g. model etc.
 - [x] funcs with no args
+- [x] license in scripts
+- [x] squash / rebase branch before merging into main, then archive
