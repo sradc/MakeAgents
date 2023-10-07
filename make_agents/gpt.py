@@ -7,7 +7,7 @@ from tenacity import (
 )
 
 
-def get_completion(model: str = "gpt-3.5-turbo", **kwargs) -> callable:
+def get_completion_func(model: str = "gpt-3.5-turbo", **kwargs) -> callable:
     @retry(
         retry=retry_if_exception_type(
             (openai.error.Timeout, openai.error.RateLimitError)

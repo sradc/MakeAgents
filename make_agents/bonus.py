@@ -18,6 +18,6 @@ def draw_graph(agent_graph: dict[callable, list[callable]]):
                 dot.edge(node.__name__, child.__name__)
         else:
             dot.edge(node.__name__, children.__name__)
-    gvz_graph = dot.pipe(format="png", engine="neato", renderer="cairo")
+    gvz_graph = dot.pipe(format="png")
     image = Image.open(io.BytesIO(gvz_graph), mode="r", formats=["png"]).convert("RGB")
     return image

@@ -10,12 +10,21 @@
 
 # MakeAgents
 
-MakeAgents is a micro framework for creating LLM-powered agents.
-It consists of tools and a paridigm for creating agents.
+MakeAgents is a micro framework for creating LLM-driven agents, (it currently supports OpenAI's GPT chat models).
+
+The MakeAgents paradigm is to define an agent's behaviour and capabilities through **action functions**, and an **action graph**. 
+
+TODO: put this in a "concepts" tutorial, with examples for each:
+
+- Action functions: capabilities of the agent, that also shape its behaviour, (can be considered as part of the prompt).
+- Action graph: defines what actions the agent has access to at a given point in time. Can shape the behaviour, and e.g. make sure that certain actions have been carried out before other actions.
+- Message stack: put your system prompt here. This is the conversation history, although if it's summarised / reduced, it no longer reflects history.
+- Execution is carried out using a generator, which makes it easy to see and vet what the agent is doing / about to do.
+
 
 ## Quickstart examples
 
-### Example 1: A simple conversational agent
+### Example 1: A conversational agent for getting the user's name
 
 
 ```python
@@ -29,14 +38,22 @@ from pydantic import BaseModel, Field
 
 
 ```python
-# Define the functions the agent will use
+# Define action functions
+
+
+@ma.action
+def get_names_task_instructions():
+    return (
+        "Your task is to get both the user's first and second name. Converse with them"
+        " until you get it."
+    )
 
 
 class MessageUserArg(BaseModel):
     question: str = Field(description="Question to ask user")
 
 
-@ma.llm_func
+@ma.action
 def message_user(arg: MessageUserArg):
     """Send the user a message, and get their response."""
     response = ""
@@ -50,29 +67,25 @@ class LogNameArg(BaseModel):
     last_name: str = Field(description="User's last name")
 
 
-@ma.llm_func
-def log_name(arg: LogNameArg):
-    """Log the name of the user. Only do this if you are certain."""
+@ma.action
+def record_name(arg: LogNameArg):
+    """Record the users first and last name."""
     return {"first_name": arg.first_name, "last_name": arg.last_name}
 
 
-# Define the agent, as a graph of functions
-agent_graph = {
-    ma.Start: [message_user],
-    message_user: [message_user, log_name],
+# Define action graph
+action_graph = {
+    ma.Start: [get_names_task_instructions],
+    get_names_task_instructions: [message_user],
+    message_user: [message_user, record_name],
 }
-display(ma.draw_graph(agent_graph))
-
-# Initialise the message stack with a system prompt
-messages_init = [
-    {
-        "role": "system",
-        "content": "Get the first and last name of the user.",
-    }
-]
+display(ma.bonus.draw_graph(action_graph))
 
 # Run the agent
-for messages in ma.run_agent(agent_graph, messages_init):
+for messages in ma.run_agent(
+    action_graph, completion=ma.gpt.get_completion_func(model="gpt-3.5-turbo")
+):
+    # `messages` contains the whole message stack, so just print the most recent message
     pprint.pprint(messages[-1], indent=2)
     print()
 print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
@@ -84,70 +97,96 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
     
 
 
-    { 'content': None,
-      'function_call': { 'arguments': '{"next_function": "message_user"}',
-                         'name': 'select_next_func'},
-      'role': 'assistant'}
-    
-    { 'content': '{"next_function": "message_user"}',
-      'name': 'select_next_func',
+    { 'content': '"Your task is to get both the user\'s first and second name. '
+                 'Converse with them until you get it."',
+      'name': 'get_names_task_instructions',
       'role': 'function'}
     
     { 'content': None,
-      'function_call': { 'arguments': '{"question": "What is your first name?"}',
+      'function_call': { 'arguments': '{\n'
+                                      '  "question": "What is your first name?"\n'
+                                      '}',
                          'name': 'message_user'},
       'role': 'assistant'}
     
-    { 'content': '"Uh, well, it\'s Bill"',
+    { 'content': '"It\'s uh, sorry what do hyou mean?"',
       'name': 'message_user',
       'role': 'function'}
     
     { 'content': None,
-      'function_call': { 'arguments': '{"next_function": "message_user"}',
+      'function_call': { 'arguments': '{\n  "next_function": "message_user"\n}',
                          'name': 'select_next_func'},
       'role': 'assistant'}
     
     { 'content': '{"next_function": "message_user"}',
-      'name': 'select_next_func',
-      'role': 'function'}
-    
-    { 'content': None,
-      'function_call': { 'arguments': '{"question": "And what is your last name?"}',
-                         'name': 'message_user'},
-      'role': 'assistant'}
-    
-    { 'content': '"And that... would be BoBaggins"',
-      'name': 'message_user',
-      'role': 'function'}
-    
-    { 'content': None,
-      'function_call': { 'arguments': '{"next_function": "log_name"}',
-                         'name': 'select_next_func'},
-      'role': 'assistant'}
-    
-    { 'content': '{"next_function": "log_name"}',
       'name': 'select_next_func',
       'role': 'function'}
     
     { 'content': None,
       'function_call': { 'arguments': '{\n'
-                                      '"first_name": "Bill",\n'
-                                      '"last_name": "BoBaggins"\n'
+                                      '  "question": "I apologize for the '
+                                      'confusion. Could you please tell me your '
+                                      'first name?"\n'
                                       '}',
-                         'name': 'log_name'},
+                         'name': 'message_user'},
       'role': 'assistant'}
     
-    { 'content': '{"first_name": "Bill", "last_name": "BoBaggins"}',
-      'name': 'log_name',
+    {'content': '"It\'s Fry"', 'name': 'message_user', 'role': 'function'}
+    
+    { 'content': None,
+      'function_call': { 'arguments': '{\n  "next_function": "message_user"\n}',
+                         'name': 'select_next_func'},
+      'role': 'assistant'}
+    
+    { 'content': '{"next_function": "message_user"}',
+      'name': 'select_next_func',
       'role': 'function'}
     
-    Retrieved user_name: {'first_name': 'Bill', 'last_name': 'BoBaggins'}
+    { 'content': None,
+      'function_call': { 'arguments': '{\n'
+                                      '  "question": "Thank you for providing your '
+                                      'first name, Fry. Could you also tell me '
+                                      'your last name?"\n'
+                                      '}',
+                         'name': 'message_user'},
+      'role': 'assistant'}
+    
+    {'content': '"Yep, it\'s Jogo"', 'name': 'message_user', 'role': 'function'}
+    
+    { 'content': None,
+      'function_call': { 'arguments': '{\n  "next_function": "record_name"\n}',
+                         'name': 'select_next_func'},
+      'role': 'assistant'}
+    
+    { 'content': '{"next_function": "record_name"}',
+      'name': 'select_next_func',
+      'role': 'function'}
+    
+    { 'content': None,
+      'function_call': { 'arguments': '{\n'
+                                      '  "first_name": "Fry",\n'
+                                      '  "last_name": "Jogo"\n'
+                                      '}',
+                         'name': 'record_name'},
+      'role': 'assistant'}
+    
+    { 'content': '{"first_name": "Fry", "last_name": "Jogo"}',
+      'name': 'record_name',
+      'role': 'function'}
+    
+    Retrieved user_name: {'first_name': 'Fry', 'last_name': 'Jogo'}
 
 
 ### Notes:
 
 Prompting has a big impact on the performance of the agent. The `llm_func` function names, Pydantic models and docstrings can all be considered part of the prompt.
 
+### Contributing
+
+It's early days for the framework...
+
+- If you have an opinion, please raise an issue / start a discussion.
+- If you have created something cool, please consider contributing (will put in `community_examples`)
 
 ### Dev setup
 

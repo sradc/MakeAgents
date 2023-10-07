@@ -6,11 +6,11 @@ from typing import Iterator, Optional
 
 from pydantic import BaseModel, Field
 
-from make_agents.gpt import get_completion
+from make_agents.gpt import get_completion_func
 
-default_completion = get_completion()
+default_completion = get_completion_func()
 
-default_system_prompt = """You are a helpful assistant. Pay attention to the functions that you have been given access to at a given point in time, and try to help the user achieve their goal."""
+default_system_prompt = """You will recieve instructions through functions. You will be given access to different functions at different times. Follow the instructions to complete the task."""
 
 
 def action(func: callable) -> callable:
@@ -121,7 +121,7 @@ def get_func_input_from_llm(
 
 
 def run_func_for_llm(llm_func: callable, arg):
-    func_result = llm_func(arg)
+    func_result = llm_func(arg) if arg else llm_func()
     func_result_message = {
         "role": "function",
         "name": llm_func.description_for_llm["name"],
@@ -169,27 +169,6 @@ def run_agent(
         # Decide which function to run next
         if len(options) == 1:
             current_node = options[0]
-            arguments = json.dumps({"next_function": description(current_node)["name"]})
-            # Pretend that we asked the LLM to select the next function (so it's in the history)
-            messages.append(
-                {
-                    "role": "assistant",
-                    "content": None,
-                    "function_call": {
-                        "name": "select_next_func",
-                        "arguments": arguments,
-                    },
-                },
-            )
-            yield messages
-            messages.append(
-                {
-                    "role": "function",
-                    "name": "select_next_func",
-                    "content": arguments,
-                },
-            )
-            yield messages
         else:
             # llm decides the next function
             select_next_func = select_next_action_factory(options)
@@ -207,15 +186,21 @@ def run_agent(
             current_node = next(
                 x for x in options if description(x)["name"] == next_function
             )
-        # Run the function that was selected
-        func_arg_message, func_arg = get_func_input_from_llm(
-            messages, current_node, completion
-        )
-        messages.append(func_arg_message)
-        yield messages
-        func_result_message, func_result = run_func_for_llm(current_node, func_arg)
-        messages.append(func_result_message)
-        yield messages
+        if description(current_node)["parameters"]:
+            # llm decides the arg
+            func_arg_message, func_arg = get_func_input_from_llm(
+                messages, current_node, completion
+            )
+            messages.append(func_arg_message)
+            yield messages
+            func_result_message, func_result = run_func_for_llm(current_node, func_arg)
+            messages.append(func_result_message)
+            yield messages
+        else:
+            # no arg, just run the function directly
+            func_result_message, func_result = run_func_for_llm(current_node, None)
+            messages.append(func_result_message)
+            yield messages
         options = action_graph.get(current_node, None)
         if not options:
             break
