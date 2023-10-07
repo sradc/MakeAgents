@@ -10,7 +10,7 @@ from make_agents.gpt import get_completion_func
 
 default_completion = get_completion_func()
 
-default_system_prompt = """You will recieve instructions through functions. You will be given access to different functions at different times. Follow the instructions to complete the task."""
+default_system_prompt = """You are a helpful assistant. You will be given tasks, via function calls. You will be given the ability to run different functions at different times. Please use them to complete the most recent task you have been given."""
 
 
 def action(func: callable) -> callable:

@@ -18,7 +18,6 @@ TODO: put this in a "concepts" tutorial, with examples for each:
 
 - Action functions: capabilities of the agent, that also shape its behaviour, (can be considered as part of the prompt).
 - Action graph: defines what actions the agent has access to at a given point in time. Can shape the behaviour, and e.g. make sure that certain actions have been carried out before other actions.
-- Message stack: put your system prompt here. This is the conversation history, although if it's summarised / reduced, it no longer reflects history.
 - Execution is carried out using a generator, which makes it easy to see and vet what the agent is doing / about to do.
 
 
@@ -31,9 +30,9 @@ TODO: put this in a "concepts" tutorial, with examples for each:
 import json
 import pprint
 
-import make_agents as ma
-
 from pydantic import BaseModel, Field
+
+import make_agents as ma
 ```
 
 
@@ -109,7 +108,7 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
                          'name': 'message_user'},
       'role': 'assistant'}
     
-    { 'content': '"It\'s uh, sorry what do hyou mean?"',
+    { 'content': '"My first name is Fry"',
       'name': 'message_user',
       'role': 'function'}
     
@@ -124,34 +123,12 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
     
     { 'content': None,
       'function_call': { 'arguments': '{\n'
-                                      '  "question": "I apologize for the '
-                                      'confusion. Could you please tell me your '
-                                      'first name?"\n'
+                                      '  "question": "What is your last name?"\n'
                                       '}',
                          'name': 'message_user'},
       'role': 'assistant'}
     
-    {'content': '"It\'s Fry"', 'name': 'message_user', 'role': 'function'}
-    
-    { 'content': None,
-      'function_call': { 'arguments': '{\n  "next_function": "message_user"\n}',
-                         'name': 'select_next_func'},
-      'role': 'assistant'}
-    
-    { 'content': '{"next_function": "message_user"}',
-      'name': 'select_next_func',
-      'role': 'function'}
-    
-    { 'content': None,
-      'function_call': { 'arguments': '{\n'
-                                      '  "question": "Thank you for providing your '
-                                      'first name, Fry. Could you also tell me '
-                                      'your last name?"\n'
-                                      '}',
-                         'name': 'message_user'},
-      'role': 'assistant'}
-    
-    {'content': '"Yep, it\'s Jogo"', 'name': 'message_user', 'role': 'function'}
+    {'content': '"It\'s Bobarb"', 'name': 'message_user', 'role': 'function'}
     
     { 'content': None,
       'function_call': { 'arguments': '{\n  "next_function": "record_name"\n}',
@@ -165,16 +142,16 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
     { 'content': None,
       'function_call': { 'arguments': '{\n'
                                       '  "first_name": "Fry",\n'
-                                      '  "last_name": "Jogo"\n'
+                                      '  "last_name": "Bobarb"\n'
                                       '}',
                          'name': 'record_name'},
       'role': 'assistant'}
     
-    { 'content': '{"first_name": "Fry", "last_name": "Jogo"}',
+    { 'content': '{"first_name": "Fry", "last_name": "Bobarb"}',
       'name': 'record_name',
       'role': 'function'}
     
-    Retrieved user_name: {'first_name': 'Fry', 'last_name': 'Jogo'}
+    Retrieved user_name: {'first_name': 'Fry', 'last_name': 'Bobarb'}
 
 
 ### Notes:
