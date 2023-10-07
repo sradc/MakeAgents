@@ -23,9 +23,9 @@ limitations under the License. -->
 
 # MakeAgents
 
-MakeAgents is a micro framework for creating LLM-driven agents, (it currently supports OpenAI's GPT chat models).
+MakeAgents is a micro framework for creating LLM-driven agents. It currently supports OpenAI's GPT chat models.
 
-The MakeAgents paradigm is to define an agent's behaviour and capabilities through **action functions**, and an **action graph**. 
+The MakeAgents paradigm is to define an agent's behaviour and capabilities entirely through **action functions**, and an **action graph**. 
 
 TODO: put this in a "concepts" tutorial, with examples for each:
 
@@ -54,11 +54,8 @@ import make_agents as ma
 
 
 @ma.action
-def get_names_task_instructions():
-    return (
-        "Your task is to get both the user's first and second name. Converse with them"
-        " until you get it."
-    )
+def get_task_instructions():
+    return "Your task is to get both the user's first and second name."
 
 
 class MessageUserArg(BaseModel):
@@ -87,17 +84,17 @@ def record_name(arg: LogNameArg):
 
 # Define action graph
 action_graph = {
-    ma.Start: [get_names_task_instructions],
-    get_names_task_instructions: [message_user],
+    ma.Start: [get_task_instructions],
+    get_task_instructions: [message_user],
     message_user: [message_user, record_name],
 }
 display(ma.bonus.draw_graph(action_graph))
 
 # Run the agent
 for messages in ma.run_agent(action_graph):
-    # `messages` contains the whole message stack, so just print the most recent message
-    pprint.pprint(messages[-1], indent=2)
-    print()
+    # `messages` contains the full message stack, so just print the most recent message
+    ma.bonus.display_message_dict_jupyter(messages[-1])
+
 print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
 ```
 
@@ -107,60 +104,403 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
     
 
 
-    { 'content': '"Your task is to get both the user\'s first and second name. '
-                 'Converse with them until you get it."',
-      'name': 'get_names_task_instructions',
-      'role': 'function'}
-    
-    { 'content': None,
-      'function_call': { 'arguments': '{\n'
-                                      '  "question": "What is your first name?"\n'
-                                      '}',
-                         'name': 'message_user'},
-      'role': 'assistant'}
-    
-    {'content': '"It\'s Bob"', 'name': 'message_user', 'role': 'function'}
-    
-    { 'content': None,
-      'function_call': { 'arguments': '{\n  "next_function": "message_user"\n}',
-                         'name': 'select_next_func'},
-      'role': 'assistant'}
-    
-    { 'content': '{"next_function": "message_user"}',
-      'name': 'select_next_func',
-      'role': 'function'}
-    
-    { 'content': None,
-      'function_call': { 'arguments': '{\n'
-                                      '  "question": "What is your last name?"\n'
-                                      '}',
-                         'name': 'message_user'},
-      'role': 'assistant'}
-    
-    {'content': '"It\'s Bill"', 'name': 'message_user', 'role': 'function'}
-    
-    { 'content': None,
-      'function_call': { 'arguments': '{\n  "next_function": "record_name"\n}',
-                         'name': 'select_next_func'},
-      'role': 'assistant'}
-    
-    { 'content': '{"next_function": "record_name"}',
-      'name': 'select_next_func',
-      'role': 'function'}
-    
-    { 'content': None,
-      'function_call': { 'arguments': '{\n'
-                                      '  "first_name": "Bob",\n'
-                                      '  "last_name": "Bill"\n'
-                                      '}',
-                         'name': 'record_name'},
-      'role': 'assistant'}
-    
-    { 'content': '{"first_name": "Bob", "last_name": "Bill"}',
-      'name': 'record_name',
-      'role': 'function'}
-    
-    Retrieved user_name: {'first_name': 'Bob', 'last_name': 'Bill'}
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>content</td>
+      <td>"Your task is to get both the user's first and second name."</td>
+    </tr>
+    <tr>
+      <td>name</td>
+      <td>get_task_instructions</td>
+    </tr>
+    <tr>
+      <td>role</td>
+      <td>function</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<style> 
+    .dataframe thead { display: none; } 
+    .dataframe tbody tr th:only-of-type { display: none; }
+    .dataframe tbody td { text-align: left; }
+</style>
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>content</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <td>function_call</td>
+      <td>{'name': 'message_user', 'arguments': '{
+  "question": "What is your first name?"
+}'}</td>
+    </tr>
+    <tr>
+      <td>role</td>
+      <td>assistant</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<style> 
+    .dataframe thead { display: none; } 
+    .dataframe tbody tr th:only-of-type { display: none; }
+    .dataframe tbody td { text-align: left; }
+</style>
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>content</td>
+      <td>"It's Bill"</td>
+    </tr>
+    <tr>
+      <td>name</td>
+      <td>message_user</td>
+    </tr>
+    <tr>
+      <td>role</td>
+      <td>function</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<style> 
+    .dataframe thead { display: none; } 
+    .dataframe tbody tr th:only-of-type { display: none; }
+    .dataframe tbody td { text-align: left; }
+</style>
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>content</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <td>function_call</td>
+      <td>{'name': 'select_next_func', 'arguments': '{
+  "next_function": "message_user"
+}'}</td>
+    </tr>
+    <tr>
+      <td>role</td>
+      <td>assistant</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<style> 
+    .dataframe thead { display: none; } 
+    .dataframe tbody tr th:only-of-type { display: none; }
+    .dataframe tbody td { text-align: left; }
+</style>
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>content</td>
+      <td>{"next_function": "message_user"}</td>
+    </tr>
+    <tr>
+      <td>name</td>
+      <td>select_next_func</td>
+    </tr>
+    <tr>
+      <td>role</td>
+      <td>function</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<style> 
+    .dataframe thead { display: none; } 
+    .dataframe tbody tr th:only-of-type { display: none; }
+    .dataframe tbody td { text-align: left; }
+</style>
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>content</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <td>function_call</td>
+      <td>{'name': 'message_user', 'arguments': '{
+  "question": "What is your second name?"
+}'}</td>
+    </tr>
+    <tr>
+      <td>role</td>
+      <td>assistant</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<style> 
+    .dataframe thead { display: none; } 
+    .dataframe tbody tr th:only-of-type { display: none; }
+    .dataframe tbody td { text-align: left; }
+</style>
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>content</td>
+      <td>"BoBaggins"</td>
+    </tr>
+    <tr>
+      <td>name</td>
+      <td>message_user</td>
+    </tr>
+    <tr>
+      <td>role</td>
+      <td>function</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<style> 
+    .dataframe thead { display: none; } 
+    .dataframe tbody tr th:only-of-type { display: none; }
+    .dataframe tbody td { text-align: left; }
+</style>
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>content</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <td>function_call</td>
+      <td>{'name': 'select_next_func', 'arguments': '{
+  "next_function": "record_name"
+}'}</td>
+    </tr>
+    <tr>
+      <td>role</td>
+      <td>assistant</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<style> 
+    .dataframe thead { display: none; } 
+    .dataframe tbody tr th:only-of-type { display: none; }
+    .dataframe tbody td { text-align: left; }
+</style>
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>content</td>
+      <td>{"next_function": "record_name"}</td>
+    </tr>
+    <tr>
+      <td>name</td>
+      <td>select_next_func</td>
+    </tr>
+    <tr>
+      <td>role</td>
+      <td>function</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<style> 
+    .dataframe thead { display: none; } 
+    .dataframe tbody tr th:only-of-type { display: none; }
+    .dataframe tbody td { text-align: left; }
+</style>
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>content</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <td>function_call</td>
+      <td>{'name': 'record_name', 'arguments': '{
+  "first_name": "Bill",
+  "last_name": "BoBaggins"
+}'}</td>
+    </tr>
+    <tr>
+      <td>role</td>
+      <td>assistant</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<style> 
+    .dataframe thead { display: none; } 
+    .dataframe tbody tr th:only-of-type { display: none; }
+    .dataframe tbody td { text-align: left; }
+</style>
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>content</td>
+      <td>{"first_name": "Bill", "last_name": "BoBaggins"}</td>
+    </tr>
+    <tr>
+      <td>name</td>
+      <td>record_name</td>
+    </tr>
+    <tr>
+      <td>role</td>
+      <td>function</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<style> 
+    .dataframe thead { display: none; } 
+    .dataframe tbody tr th:only-of-type { display: none; }
+    .dataframe tbody td { text-align: left; }
+</style>
+
+
+
+    Retrieved user_name: {'first_name': 'Bill', 'last_name': 'BoBaggins'}
 
 
 ### Notes:

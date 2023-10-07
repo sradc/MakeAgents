@@ -94,8 +94,7 @@ def select_next_action_factory(options: list[callable]) -> callable:
 
     select_next_func.__doc__ = (
         "Given the following functions, choose the one that will most help you achieve"
-        " your goal: "
-        + ", ".join([json.dumps(description(x)) for x in options])
+        " your goal: " + ", ".join([json.dumps(description(x)) for x in options])
     )
     return action(select_next_func)
 

@@ -34,3 +34,22 @@ def draw_graph(agent_graph: dict[callable, list[callable]]):
     gvz_graph = dot.pipe(format="png")
     image = Image.open(io.BytesIO(gvz_graph), mode="r", formats=["png"]).convert("RGB")
     return image
+
+
+def display_message_dict_jupyter(message: dict):
+    import pandas as pd
+    from IPython.display import HTML, display
+
+    # Create style without index and with left-aligned text
+    style = """
+    <style>
+        .dataframe thead { display: none; }
+        .dataframe tbody tr th:only-of-type { display: none; }
+        .dataframe tbody td { text-align: left; }
+    </style>
+    """
+    message = dict(sorted(message.items()))
+    df = pd.DataFrame(list(message.items()), columns=["Key", "Value"])
+    # Show DataFrame
+    display(HTML(df.to_html(index=False)))
+    display(HTML(style))
