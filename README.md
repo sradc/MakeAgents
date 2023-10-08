@@ -23,10 +23,11 @@ limitations under the License. -->
 
 # MakeAgents 
 
-MakeAgents is a micro framework for creating LLM-driven agents. It currently supports OpenAI's GPT chat models out of the box.
+MakeAgents is a micro framework for creating LLM-driven agents.
 
 The MakeAgents paradigm is to define an agent's behaviour and capabilities entirely through **action functions**, and an **action graph**.
 
+Currently supports OpenAI's GPT chat models out of the box.
 
 ## Examples
 
