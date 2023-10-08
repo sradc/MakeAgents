@@ -35,7 +35,7 @@ def run_bash_command(arg: RunBashCommandArg):
     """Record the users first and last name."""
     command = arg.command.strip()
     answer = input(
-        f"Please validate the following bash command:\n`{command}`\nDo you want to run it? (y/n)\n>  "
+        f"Please validate the following bash command:\n`{command}`\nDo you want the agent to run it? (y/n)\n>  "
     ).lower()
     while not answer:
         if answer not in ["y", "n"]:
