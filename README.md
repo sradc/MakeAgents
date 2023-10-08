@@ -86,15 +86,13 @@ def record_first_and_last_name(arg: LogNameArg):
 
 
 # Define action graph
-action_graph = ma.ActionGraphDict(
-    {
-        ma.Start: [get_task_instructions],
-        get_task_instructions: [message_user],
-        message_user: [message_user, record_first_and_last_name],
-    }
-)
+action_graph = {
+    ma.Start: [get_task_instructions],
+    get_task_instructions: [message_user],
+    message_user: [message_user, record_first_and_last_name],
+}
 display(Markdown("### Action graph"))
-display(ma.bonus.draw_graph(action_graph.action_graph_dict))
+display(ma.bonus.draw_graph(action_graph))
 
 # Run the agent
 display(Markdown("### Agent activity"))
@@ -125,36 +123,36 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
       "question": "Could you please tell me your first name?"
     }
     
-    `message_user` result: "Sure, it's Bob"
+    `message_user` result: "It's Bill"
     
     call `select_next_func`: {
-      "thought_process": "Now that I have the user's first name, I need to ask for the user's last name.",
+      "thought_process": "Now that I have the user's first name, I'll ask for their last name.",
       "next_function": "message_user"
     }
     
     `select_next_func` result: "message_user"
     
     call `message_user`: {
-      "question": "Thank you, Bob. Could you please tell me your last name?"
+      "question": "Could you please tell me your last name?"
     }
     
-    `message_user` result: "Yep, it's Dob"
+    `message_user` result: "Sure, it's BoBaggins"
     
     call `select_next_func`: {
-      "thought_process": "Now that I have the user's last name, I can record the first and last name.",
+      "thought_process": "Now that I have both first and last name of the user, I'll store them using record_first_and_last_name function.",
       "next_function": "record_first_and_last_name"
     }
     
     `select_next_func` result: "record_first_and_last_name"
     
     call `record_first_and_last_name`: {
-      "first_name": "Bob",
-      "last_name": "Dob"
+      "first_name": "Bill",
+      "last_name": "BoBaggins"
     }
     
-    `record_first_and_last_name` result: {"first_name": "Bob", "last_name": "Dob"}
+    `record_first_and_last_name` result: {"first_name": "Bill", "last_name": "BoBaggins"}
     
-    Retrieved user_name: {'first_name': 'Bob', 'last_name': 'Dob'}
+    Retrieved user_name: {'first_name': 'Bill', 'last_name': 'BoBaggins'}
 
 
 ### Notes:

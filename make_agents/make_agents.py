@@ -15,7 +15,7 @@ import inspect
 import json
 from copy import deepcopy
 from enum import Enum
-from typing import Iterator, Optional
+from typing import Iterator, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -152,7 +152,7 @@ def identity(x):
 
 
 def run_agent(
-    action_graph: dict[callable, list[callable]],
+    action_graph: Union[dict, callable],
     messages_init: Optional[list[dict]] = None,
     completion: Optional[callable] = default_completion,
     pre_llm_callback: Optional[callable] = identity,
@@ -182,6 +182,8 @@ def run_agent(
         At each step, the list of messages is yielded,
         i.e. the same list that was yielded in the previous step, with one more message appended.
     """
+    if isinstance(action_graph, dict):
+        action_graph = dict_to_action_graph_func(action_graph)
     messages = (
         deepcopy(messages_init)
         if messages_init
@@ -239,9 +241,10 @@ def run_agent(
         yield deepcopy(messages)
 
 
-class ActionGraphDict:
-    def __init__(self, action_graph_dict: dict):
-        self.action_graph_dict = action_graph_dict
+def dict_to_action_graph_func(action_graph: dict) -> callable:
+    def action_graph_func(
+        current_action: callable, current_action_result: Union[dict, None]
+    ):
+        return action_graph.get(current_action, None)
 
-    def __call__(self, current_action: callable, current_action_result: dict | None):
-        return self.action_graph_dict.get(current_action, None)
+    return action_graph_func
