@@ -22,12 +22,16 @@ readme:
 	&& poetry run python scripts/replace_readme_image_links.py
 
 docs:
-	cd docs_creator  \
-	&& $(MAKE) html  \
-	&& rm -rf ../docs  \
-	&& mkdir ../docs  \
-	&& cp -r build/html/* ../docs  \
-	&& touch ../docs/.nojekyll
+	poetry install && \
+	if poetry run python scripts/assert_docs_up_to_date.py; then \
+		echo "Docs are up to date"; \
+	else \
+		cd docs_creator  \
+		&& $(MAKE) html  \
+		&& find ../docs ! -name 'CNAME' -type f -exec rm -f {} +  \
+		&& cp -r build/html/* ../docs  \
+		&& touch ../docs/.nojekyll; \
+	fi
 
 serve_docs: docs
 	cd docs && python -m http.server
