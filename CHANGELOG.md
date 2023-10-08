@@ -2,6 +2,13 @@
 
 
 
+## v0.2.0 (2023-10-08)
+
+### Feature
+
+* feat: (breaking) added docs, more examples in readme, renamed functions, support action_graph as a function, refactorings (#2) ([`d22fe6b`](https://github.com/sradc/MakeAgents/commit/d22fe6b4c51b17a0e89a777be3e4fe915f77acc4))
+
+
 ## v0.1.0 (2023-10-04)
 
 ### Feature
