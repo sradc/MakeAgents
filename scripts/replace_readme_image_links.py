@@ -4,7 +4,7 @@ import re
 
 if __name__ == "__main__":
     FILE_PATH = "README.md"
-    GITHUB_PATH = "sradc/MakeAgents/master"
+    GITHUB_PATH = "sradc/MakeAgents/main"
 
     with open(FILE_PATH, "r") as file:
         data = file.read()

@@ -18,7 +18,7 @@ limitations under the License. -->
 `pip install make_agents`
  
 <p align="center">
-  <img src="https://raw.githubusercontent.com/sradc/MakeAgents/master/README_files/make_agents_logo.jpg" width=256>
+  <img src="https://raw.githubusercontent.com/sradc/MakeAgents/main/README_files/make_agents_logo.jpg" width=256>
 </p>
 
 # MakeAgents 
@@ -114,7 +114,7 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
 
 
     
-![png](https://raw.githubusercontent.com/sradc/MakeAgents/master/README_files/README_4_1.png)
+![png](https://raw.githubusercontent.com/sradc/MakeAgents/main/README_files/README_4_1.png)
     
 
 
@@ -218,7 +218,7 @@ for messages in ma.run_agent(action_graph):
 
 
     
-![png](https://raw.githubusercontent.com/sradc/MakeAgents/master/README_files/README_7_1.png)
+![png](https://raw.githubusercontent.com/sradc/MakeAgents/main/README_files/README_7_1.png)
     
 
 
@@ -451,6 +451,7 @@ for messages in ma.run_agent(action_graph):
 - For any ideas/comments/suggestions, create a GitHub issue, or comment in a relevant issue.
 - For the development of the framework itself, the aspiration is take an "example driven" development approach. 
     I.e. find compelling examples where a feature / change would be helpful before adding it.
+- Consider sharing anything cool you've made!
 
 ### Dev setup
 
