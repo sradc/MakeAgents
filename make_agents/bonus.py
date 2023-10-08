@@ -11,18 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Bonus content, i.e. not essential, not prioritised for development, but nice to have.
+"""Bonus content.
+Not properly documented or tested, and dependencies not captured in Poetry.
+Use at your own risk.
 """
-import io
 
 
 def draw_graph(agent_graph: dict[callable, list[callable]]):
-    try:
-        import graphviz
-        from PIL import Image
-    except ImportError:
-        raise ImportError("You need to install graphviz and PIL to use this function.")
-    dot = graphviz.Digraph(comment="graph", format="png", graph_attr={"dpi": "120"})
+    import io
+
+    import graphviz
+    from PIL import Image
+
+    dot = graphviz.Digraph(comment="graph", format="png", graph_attr={"dpi": "80"})
     for node in agent_graph:
         dot.node(node.__name__, node.__name__)
     for node, children in agent_graph.items():
@@ -36,20 +37,17 @@ def draw_graph(agent_graph: dict[callable, list[callable]]):
     return image
 
 
-def display_message_dict_jupyter(message: dict):
-    import pandas as pd
-    from IPython.display import HTML, display
-
-    # Create style without index and with left-aligned text
-    style = """
-    <style>
-        .dataframe thead { display: none; }
-        .dataframe tbody tr th:only-of-type { display: none; }
-        .dataframe tbody td { text-align: left; }
-    </style>
-    """
-    message = dict(sorted(message.items()))
-    df = pd.DataFrame(list(message.items()), columns=["Key", "Value"])
-    # Show DataFrame
-    display(HTML(df.to_html(index=False)))
-    display(HTML(style))
+def pretty_print(message: dict):
+    # Originally based on: https://github.com/openai/openai-cookbook/blob/f52ffdaca42073066f8f43f7d65a59dcc01c9349/examples/How_to_call_functions_with_chat_models.ipynb
+    if message["role"] == "system":
+        print(f"system message: {message['content']}\n")
+    elif message["role"] == "user":
+        print(f"user message: {message['content']}\n")
+    elif message["role"] == "assistant" and message.get("function_call"):
+        arguments = message["function_call"]["arguments"]
+        arguments = "<no arguments>" if arguments == "null" else arguments
+        print(f"call `{message['function_call']['name']}`: {arguments}\n")
+    elif message["role"] == "assistant" and not message.get("function_call"):
+        print(f"assistant message: {message['content']}\n")
+    elif message["role"] == "function":
+        print(f"`{message['name']}` result: {message['content']}\n")

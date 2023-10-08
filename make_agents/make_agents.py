@@ -84,13 +84,17 @@ def get_pydantic_model_from_action_func(func: callable) -> BaseModel:
 
 def select_next_action_factory(options: list[callable]) -> callable:
     class SelectNextFuncArg(BaseModel):
+        thought_process: str = Field(
+            ...,
+            description="Describe your thought process for selecting the next function in a few words.",
+        )
         next_function: Enum(
             "function_names",
             {description(x)["name"]: description(x)["name"] for x in options},
         ) = Field(..., description="Name of the function to call next")
 
-    def select_next_func(arg: SelectNextFuncArg) -> str:
-        return {"next_function": arg.next_function.value}
+    def select_next_func(arg: SelectNextFuncArg):
+        return arg.next_function.value
 
     select_next_func.__doc__ = (
         "Given the following functions, choose the one that will most help you achieve"
@@ -151,7 +155,7 @@ def run_agent(
     action_graph: dict[callable, list[callable]],
     messages_init: Optional[list[dict]] = None,
     completion: Optional[callable] = default_completion,
-    pre_action_callback: Optional[callable] = identity,
+    pre_llm_callback: Optional[callable] = identity,
 ) -> Iterator[list[dict[str, str]]]:
     """Run an agent. This is a generator that yields the list of messages after each step.
     Be mindful that the yielded messages are mutable, allowing them to be modified in place,
@@ -166,8 +170,8 @@ def run_agent(
         If not provided, the default system prompt will be used.
     completion : Optional[callable], optional
         The function that will be used to get completions from the LLM.
-    pre_action_callback : Optional[callable], optional
-        This function will be called before each action is taken.
+    pre_llm_callback : Optional[callable], optional
+        This function is called before any LLM calls.
         It will be passed the list of messages, and can modify it in place.
         Can be used for, e.g. reducing the list of messages to only the most recent ones,
         or reducing the list by summarising, etc.
@@ -183,57 +187,61 @@ def run_agent(
         if messages_init
         else [{"role": "system", "content": default_system_prompt}]
     )
-    options = action_graph[Start]
+    current_action = Start
+    current_action_result = None
     while True:
-        # Decide which function to run next
-        if len(options) == 1:
-            # only one option, don't need to ask llm
-            current_node = options[0]
-        else:
-            # llm decides the next function
-            pre_action_callback(messages)
-            select_next_func = select_next_action_factory(options)
-            func_arg_message, func_arg = get_func_input_from_llm(
-                messages, select_next_func, completion
-            )
-            messages.append(func_arg_message)
-            yield deepcopy(messages)
-            pre_action_callback(messages)
-            func_result_message, func_result = run_func_for_llm(
-                select_next_func, func_arg
-            )
-            messages.append(func_result_message)
-            yield deepcopy(messages)
-            next_function = func_result["next_function"]
-            current_node = next(
-                x for x in options if description(x)["name"] == next_function
-            )
-        # Run the function
-        if description(current_node)["parameters"]:
-            # llm decides the arg
-            pre_action_callback(messages)
-            func_arg_message, func_arg = get_func_input_from_llm(
-                messages, current_node, completion
-            )
-            messages.append(func_arg_message)
-            yield deepcopy(messages)
-            func_result_message, func_result = run_func_for_llm(current_node, func_arg)
-            messages.append(func_result_message)
-            yield deepcopy(messages)
-        else:
-            # no arg, act as if LLM has been asked for an arg, so user has chance to confirm / interrupt action
-            messages.append(
-                {
-                    "role": "function",
-                    "name": description(current_node)["name"],
-                    "content": "[function has no parameters]",
-                }
-            )
-            yield deepcopy(messages)
-            pre_action_callback(messages)
-            func_result_message, func_result = run_func_for_llm(current_node, None)
-            messages.append(func_result_message)
-            yield deepcopy(messages)
-        options = action_graph.get(current_node, None)
-        if not options:
+        next_action_options = action_graph(
+            current_action=current_action, current_action_result=current_action_result
+        )
+        if not next_action_options:
             break
+        # DECIDE NEXT ACTION
+        if len(next_action_options) == 1:
+            current_action = next_action_options[0]
+        else:
+            pre_llm_callback(messages)
+            select_next_action: callable = select_next_action_factory(next_action_options)
+            func_arg_message, func_arg = get_func_input_from_llm(
+                messages, select_next_action, completion
+            )
+            messages.append(func_arg_message)
+            yield deepcopy(messages)
+            pre_llm_callback(messages)
+            func_result_message, func_result = run_func_for_llm(
+                select_next_action, func_arg
+            )
+            messages.append(func_result_message)
+            yield deepcopy(messages)
+            current_action = next(
+                x for x in next_action_options if description(x)["name"] == func_result
+            )
+        # RUN THE ACTION
+        if description(current_action)["parameters"]:
+            pre_llm_callback(messages)
+            func_arg_message, func_arg = get_func_input_from_llm(
+                messages, current_action, completion
+            )
+        else:
+            func_arg_message = {
+                "role": "assistant",
+                "content": None,
+                "function_call": {
+                    "name": description(current_action)["name"],
+                    "arguments": "null",
+                },
+            }
+            func_arg = None
+        messages.append(func_arg_message)
+        yield deepcopy(messages)
+        pre_llm_callback(messages)
+        func_result_message, func_result = run_func_for_llm(current_action, func_arg)
+        messages.append(func_result_message)
+        yield deepcopy(messages)
+
+
+class ActionGraphDict:
+    def __init__(self, action_graph_dict: dict):
+        self.action_graph_dict = action_graph_dict
+
+    def __call__(self, current_action: callable, current_action_result: dict | None):
+        return self.action_graph_dict.get(current_action, None)
