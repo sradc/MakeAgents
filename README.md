@@ -48,16 +48,11 @@ from pydantic import BaseModel, Field
 import make_agents as ma
 ```
 
-#### Action function, `message_user`
-
-An action function must have at most one argument, and that argument must be annotated with a Pydantic model. 
-The function's name, its docstring, and the Pydantic model, is provided to the LLM, and should be considered as part of the promping strategy.
-It's not recommended to annotate the arg in the docstring, since it is done via the Pydantic model already.
-
-This action function allows the agent to message the user, and get a response.
-
 
 ```python
+# First define the action functions
+
+
 class MessageUserArg(BaseModel):
     message: str = Field(description="Message to send user")
 
@@ -69,11 +64,6 @@ def message_user(arg: MessageUserArg):
     while response == "":
         response = input(arg.message).strip()
     return response
-```
-
-
-```python
-# Define the remaining action functions.
 
 
 @ma.action
@@ -114,7 +104,7 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
 
 
     
-![png](https://raw.githubusercontent.com/sradc/MakeAgents/main/README_files/README_4_1.png)
+![png](https://raw.githubusercontent.com/sradc/MakeAgents/main/README_files/README_2_1.png)
     
 
 
@@ -164,7 +154,7 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
 
 ### Example 2: A system assistant <span style="color:red"> — _dangerous_</span>
 
-In this example, the agent is allowed to run bash commands on your system, and read the results... Validation is implemented, so please make sure you understand the command before allowing it to run.
+This agent is allowed to run bash commands on your system, and read the results... Validation is implemented, so <b>please make sure you understand the commands before allowing them to run.</b>
 
 
 ```python
@@ -218,7 +208,7 @@ for messages in ma.run_agent(action_graph):
 
 
     
-![png](https://raw.githubusercontent.com/sradc/MakeAgents/main/README_files/README_7_1.png)
+![png](https://raw.githubusercontent.com/sradc/MakeAgents/main/README_files/README_5_1.png)
     
 
 
