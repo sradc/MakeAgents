@@ -34,7 +34,7 @@ Currently supports OpenAI's GPT chat models out of the box.
 - Install `make_agents` using your package manager, e.g. `pip install make_agents`
 - Set the `OPENAI_API_KEY` environment variable, with your [OpenAI api key](https://help.openai.com/en/articles/4936850-where-do-i-find-my-secret-api-key).
     - Alternatively, `import openai` and set `openai.api_key = ...`
-- See the examples below, the [reference docs](http://makeagents.com/), and check out the code.
+- See the examples below, the [reference docs](https://makeagents.com/), and check out the code.
 
 ## Examples
 
