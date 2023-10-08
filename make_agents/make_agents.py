@@ -83,6 +83,10 @@ def get_pydantic_model_from_action_func(func: callable) -> BaseModel:
 
 
 def select_next_action_factory(options: list[callable]) -> callable:
+    names = [description(x)["name"] for x in options]
+    if len(names) != len(set(names)):
+        raise ValueError(f"Duplicate function names: {names}")
+
     class SelectNextFuncArg(BaseModel):
         thought_process: str = Field(
             ...,
@@ -145,6 +149,16 @@ def run_func_for_llm(func: callable, arg: Optional[BaseModel]):
 
 class Start:
     """Used to mark the start of the action graph."""
+
+
+class End:
+    """Can be used to end the action graph."""
+
+    description_for_llm = {
+        "name": "End",
+        "description": "End your assistance with immediate effect.",
+        "parameters": None,
+    }
 
 
 def identity(x):
@@ -217,6 +231,8 @@ def run_agent(
             current_action = next(
                 x for x in next_action_options if description(x)["name"] == func_result
             )
+        if current_action == End:
+            break
         # RUN THE ACTION
         if description(current_action)["parameters"]:
             pre_llm_callback(messages)
@@ -239,6 +255,7 @@ def run_agent(
         func_result_message, func_result = run_func_for_llm(current_action, func_arg)
         messages.append(func_result_message)
         yield deepcopy(messages)
+        current_action_result = func_result
 
 
 def dict_to_action_graph_func(action_graph: dict) -> callable:

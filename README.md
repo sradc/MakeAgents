@@ -23,46 +23,35 @@ limitations under the License. -->
 
 # MakeAgents 
 
-MakeAgents is a micro framework for creating LLM-driven agents. It currently supports OpenAI's GPT chat models.
+MakeAgents is a micro framework for creating LLM-driven agents. It currently supports OpenAI's GPT chat models out of the box.
 
-The MakeAgents paradigm is to define an agent's behaviour and capabilities entirely through **action functions**, and an **action graph**. 
-
-TODO: put this in a "concepts" tutorial, with examples for each:
-
-- Action functions: capabilities of the agent, that also shape its behaviour, (can be considered as part of the prompt).
-- Action graph: defines what actions the agent has access to at a given point in time. Can shape the behaviour, and e.g. make sure that certain actions have been carried out before other actions.
-- Execution is carried out using a generator, which makes it easy to see and vet what the agent is doing / about to do.
+The MakeAgents paradigm is to define an agent's behaviour and capabilities entirely through **action functions**, and an **action graph**.
 
 
-## Quickstart examples
+## Examples
 
-### Example 1: A conversational agent for getting the user's name
+### Example 1: A conversational agent tasked with getting the user's name
 
 
 ```python
-# TODO: simpler example here, just one instruction action, and one action
-
-from IPython.display import display, Markdown
-
 import json
-
+from IPython.display import display, Markdown
 from pydantic import BaseModel, Field
-
 import make_agents as ma
 ```
 
+#### Action function, `message_user`
+
+We'll use this in multiple of the examples below. It allows the agent to message the user, and get a response.
+
+An action function must have at most one argument, and that argument must be annotated with a Pydantic model. 
+The function's name, its docstring, and the Pydantic model, is provided to the LLM, and should be considered as part of the promping strategy.
+It's not recommended to annotate the arg in the docstring, since it is done via the Pydantic model already.
+
 
 ```python
-# Define action functions
-
-
-@ma.action
-def get_task_instructions():
-    return "Your task is to get both the user's first and last name."
-
-
 class MessageUserArg(BaseModel):
-    question: str = Field(description="Question to ask user")
+    message: str = Field(description="Message to send user")
 
 
 @ma.action
@@ -70,8 +59,18 @@ def message_user(arg: MessageUserArg):
     """Send the user a message, and get their response."""
     response = ""
     while response == "":
-        response = input(arg.question).strip()
+        response = input(arg.message).strip()
     return response
+```
+
+
+```python
+# Define the remaining action functions.
+
+
+@ma.action
+def get_task_instructions():
+    return "Your task is to get both the user's first and last name."
 
 
 class LogNameArg(BaseModel):
@@ -85,7 +84,7 @@ def record_first_and_last_name(arg: LogNameArg):
     return {"first_name": arg.first_name, "last_name": arg.last_name}
 
 
-# Define action graph
+# Then define action graph
 action_graph = {
     ma.Start: [get_task_instructions],
     get_task_instructions: [message_user],
@@ -94,75 +93,141 @@ action_graph = {
 display(Markdown("### Action graph"))
 display(ma.bonus.draw_graph(action_graph))
 
-# Run the agent
-display(Markdown("### Agent activity"))
+# Finally, run the agent
+display(Markdown("### Agent execution log"))
 for messages in ma.run_agent(action_graph):
     ma.bonus.pretty_print(messages[-1])  # print most recent message on stack
 print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
 ```
 
+### Example 2: A system assistant <span style="color:red"> — _dangerous_</span>
 
-### Action graph
-
-
-
-    
-![png](https://raw.githubusercontent.com/sradc/MakeAgents/master/README_files/README_3_1.png)
-    
+In this example, the agent is allowed to run bash commands on your system, and read the results... Validation is implemented, so please make sure you understand the command before allowing it to run.
 
 
+```python
+import subprocess
+import shlex
+```
 
-### Agent activity
+
+```python
+@ma.action
+def get_task_instructions():
+    return "Your task is help the user with their computer system, until they ask to end the chat. Please give the user only the relevant information."
 
 
-    call `get_task_instructions`: <no arguments>
-    
-    `get_task_instructions` result: "Your task is to get both the user's first and last name."
-    
-    call `message_user`: {
-      "question": "Could you please tell me your first name?"
-    }
-    
-    `message_user` result: "It's Bill"
-    
-    call `select_next_func`: {
-      "thought_process": "Now that I have the user's first name, I'll ask for their last name.",
-      "next_function": "message_user"
-    }
-    
-    `select_next_func` result: "message_user"
-    
-    call `message_user`: {
-      "question": "Could you please tell me your last name?"
-    }
-    
-    `message_user` result: "Sure, it's BoBaggins"
-    
-    call `select_next_func`: {
-      "thought_process": "Now that I have both first and last name of the user, I'll store them using record_first_and_last_name function.",
-      "next_function": "record_first_and_last_name"
-    }
-    
-    `select_next_func` result: "record_first_and_last_name"
-    
-    call `record_first_and_last_name`: {
-      "first_name": "Bill",
-      "last_name": "BoBaggins"
-    }
-    
-    `record_first_and_last_name` result: {"first_name": "Bill", "last_name": "BoBaggins"}
-    
-    Retrieved user_name: {'first_name': 'Bill', 'last_name': 'BoBaggins'}
+class RunBashCommandArg(BaseModel):
+    plan: str = Field(description="Plan what to run")
+    command: str = Field(description="Command to run")
 
+
+@ma.action
+def run_bash_command(arg: RunBashCommandArg):
+    """Record the users first and last name."""
+    result = subprocess.run(shlex.split(arg.command), capture_output=True, text=True)
+    return {"stout": result.stdout, "stderr": result.stderr}
+
+
+# Define action graph
+action_graph = {
+    ma.Start: [get_task_instructions],
+    get_task_instructions: [message_user],
+    message_user: [message_user, run_bash_command, ma.End],
+    run_bash_command: [message_user, run_bash_command],
+}
+display(Markdown("### Action graph"))
+display(ma.bonus.draw_graph(action_graph))
+
+# Run the agent
+display(Markdown("### Agent execution log"))
+for messages in ma.run_agent(action_graph):
+    ma.bonus.pretty_print(messages[-1])
+    if messages[-1].get("function_call", {}).get("name", "") == run_bash_command.__name__:
+        command = json.loads(messages[-1]["function_call"]["arguments"])["command"]
+        input(
+            f"Please validate the bash command, before pressing enter to continue. Command: `{command}`"
+        )
+```
+
+### Example 3: A dynamic action graph to carry out validation before making actions accessible
+
+
+```python
+@ma.action
+def get_task_instructions():
+    return "Get the users email address, and validate it."
+
+
+class SendValidationEmailArg(BaseModel):
+    users_email_address: str = Field(description="The users email address")
+
+
+@ma.action
+def send_validation_email(arg: SendValidationEmailArg):
+    """Send the user a validation email."""
+    if not arg.users_email_address.endswith(".com"):
+        return {"status": "error", "description": "Email address must end with `.com`"}
+    else:
+        return {"status": "success", "description": "Validation code sent"}
+
+
+class CheckValidationCodeArg(BaseModel):
+    validation_code: str = Field(description="The validation code (6 digits)")
+
+
+@ma.action
+def check_validation_code(arg: CheckValidationCodeArg):
+    """Send the user a validation email."""
+    if len(arg.validation_code) != 6:
+        return {"status": "error", "description": "Validation code must be 6 digits"}
+    elif arg.validation_code == "123456":
+        return {"status": "success", "description": "Validation code correct"}
+    else:
+        return {"status": "error", "description": "Validation code incorrect"}
+
+
+def action_graph(current_action: callable, current_action_result: dict) -> list[callable]:
+    """Return the next action(s) to run, given the current action and its result."""
+    if current_action == ma.Start:
+        return [get_task_instructions]
+    elif current_action == get_task_instructions:
+        return [message_user]
+    elif current_action == message_user:
+        return [message_user, send_validation_email, check_validation_code]
+    elif current_action == send_validation_email:
+        if current_action_result["status"] == "success":
+            return [message_user]
+        else:
+            return [message_user, send_validation_email]
+    elif current_action == check_validation_code:
+        if current_action_result["status"] == "success":
+            return [ma.End]
+        else:
+            return [message_user, check_validation_code]
+    else:
+        raise ValueError(f"Unknown action: {current_action}")
+
+
+# We lose the ability to plot the graph when using a function to define the action graph.
+
+# Run the agent
+display(Markdown("### Agent execution log"))
+for messages in ma.run_agent(action_graph):
+    ma.bonus.pretty_print(messages[-1])
+```
 
 ### Notes:
 
-Prompting has a big impact on the performance of the agent. The `llm_func` function names, Pydantic models and docstrings can all be considered part of the prompt.
+- Prompting has a big impact on the performance of the agent. Action function names, Pydantic models and docstrings can all be considered part of the prompting strategy.
+- The current preferred way to deal with exceptions due to the model not providing correct function args is to modify the prompts / action graph, to reduce the error rate.
+- "gpt-4" is used by default, and does perform better than "gpt-3.5-turbo", (at least with the current set up and prompts).
+
 
 ### Contributing
 
-- Please consider contributing cool examples of agents to `community_examples`
-- For any ideas/comments/suggestions, create a GitHub issue (or comment in a relevant issue).
+- Please consider contributing cool examples, (I'd like to create a `./community_examples` dir).
+- For any ideas/comments/suggestions, create a GitHub issue, or comment in a relevant issue.
 - For the development of the framework itself, the aspiration is take an "example driven" development approach. 
     I.e. find compelling examples where a feature / change would be helpful before adding it.
 

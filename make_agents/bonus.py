@@ -19,22 +19,31 @@ Use at your own risk.
 
 def draw_graph(agent_graph: dict[callable, list[callable]]):
     import io
+    import warnings
 
-    import graphviz
-    from PIL import Image
+    try:
+        import graphviz
+        from PIL import Image
 
-    dot = graphviz.Digraph(comment="graph", format="png", graph_attr={"dpi": "80"})
-    for node in agent_graph:
-        dot.node(node.__name__, node.__name__)
-    for node, children in agent_graph.items():
-        if isinstance(children, list):
-            for child in children:
-                dot.edge(node.__name__, child.__name__)
-        else:
-            dot.edge(node.__name__, children.__name__)
-    gvz_graph = dot.pipe(format="png")
-    image = Image.open(io.BytesIO(gvz_graph), mode="r", formats=["png"]).convert("RGB")
-    return image
+        dot = graphviz.Digraph(comment="graph", format="png", graph_attr={"dpi": "80"})
+        for node in agent_graph:
+            dot.node(node.__name__, node.__name__)
+        for node, children in agent_graph.items():
+            if isinstance(children, list):
+                for child in children:
+                    dot.edge(node.__name__, child.__name__)
+            else:
+                dot.edge(node.__name__, children.__name__)
+        gvz_graph = dot.pipe(format="png")
+        image = Image.open(io.BytesIO(gvz_graph), mode="r", formats=["png"]).convert(
+            "RGB"
+        )
+        return image
+    except ImportError:
+        warnings.warn(
+            "Could not import graphviz, so could not draw graph. (Note that make_agents does not install this package)."
+        )
+        return None
 
 
 def pretty_print(message: dict):
