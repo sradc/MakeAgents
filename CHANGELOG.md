@@ -2,6 +2,17 @@
 
 
 
+## v0.2.1 (2023-10-08)
+
+### Fix
+
+* fix: image links in docs, and script for that ([`c10a013`](https://github.com/sradc/MakeAgents/commit/c10a01378c1bf0fb5c4edb9be08dff165b7d65ee))
+
+### Unknown
+
+* Create CNAME ([`fe81d65`](https://github.com/sradc/MakeAgents/commit/fe81d65e5753959649b811f3eb20cd627eb73ceb))
+
+
 ## v0.2.0 (2023-10-08)
 
 ### Feature
