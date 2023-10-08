@@ -20,6 +20,7 @@ importlib-metadata = "^6.8.0"
 openai = "^0.28.1"
 tenacity = "^8.2.3"
 pydantic = "^2.4.2"
+click = "^8.1.7"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -38,11 +39,17 @@ graphviz = "^0.20.1"
 sphinx = "^7.2.6"
 pandas = "^2.1.1"
 
+
+[tool.poetry.scripts]
+make_agents = 'make_agents.cli:cli'
+
+
 [tool.semantic_release]
 version_toml = [
     "pyproject.toml:tool.poetry.version",
 ]
 build_command = "poetry build"
+
 
 [build-system]
 requires = ["poetry-core"]
