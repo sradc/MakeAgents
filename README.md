@@ -29,6 +29,13 @@ The MakeAgents paradigm is to define an agent's behaviour and capabilities entir
 
 Currently supports OpenAI's GPT chat models out of the box.
 
+## Setup
+
+- Install `make_agents` using your package manager, e.g. `pip install make_agents`
+- Set the `OPENAI_API_KEY` environment variable, with your [OpenAI api key](https://help.openai.com/en/articles/4936850-where-do-i-find-my-secret-api-key).
+    - Alternatively, `import openai` and set `openai.api_key = ...`
+- See the examples below, and the reference docs.
+
 ## Examples
 
 ### Example 1: A conversational agent tasked with getting the user's name
@@ -107,7 +114,7 @@ print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
 
 
     
-![png](https://raw.githubusercontent.com/sradc/MakeAgents/master/README_files/README_5_1.png)
+![png](https://raw.githubusercontent.com/sradc/MakeAgents/master/README_files/README_4_1.png)
     
 
 
@@ -211,7 +218,7 @@ for messages in ma.run_agent(action_graph):
 
 
     
-![png](https://raw.githubusercontent.com/sradc/MakeAgents/master/README_files/README_8_1.png)
+![png](https://raw.githubusercontent.com/sradc/MakeAgents/master/README_files/README_7_1.png)
     
 
 
