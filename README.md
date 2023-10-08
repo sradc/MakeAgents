@@ -18,7 +18,7 @@ limitations under the License. -->
 `pip install make_agents`
  
 <p align="center">
-  <img src="https://raw.githubusercontent.com/sradc/MakeAgents/main/README_files/make_agents_logo.jpg" width=256>
+  <img src="https://raw.githubusercontent.com/sradc/MakeAgents/main/static/make_agents_logo.jpg" width=256>
 </p>
 
 # MakeAgents 
@@ -37,6 +37,11 @@ Currently supports OpenAI's GPT chat models out of the box.
 - See the examples below, the [reference docs](https://makeagents.com/), and check out the code.
 
 ## Examples
+
+Video of an example agent in action:
+
+<video src="https://github.com/sradc/MakeAgents/assets/17290057/6ce06f41-026f-4621-b520-243a91bbf70d" controls="controls" style="max-width: 730px;">
+</video>
 
 ### Example 1: A conversational agent tasked with getting the user's name
 
