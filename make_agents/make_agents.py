@@ -177,8 +177,9 @@ def run_agent(
 
     Parameters
     ----------
-    action_graph : dict[callable, list[callable]]
-        The graph of actions that the agent can take.
+    action_graph : Union[dict[callable, list[callable]], callable]
+        The graph of actions that the agent can take. Can either be a dictionary
+        or a callable. Use a callable to create a dynamic action graph. (See examples in the README)
     messages_init : Optional[list[dict]], optional
         Optionally initialise the list of messages, e.g. to specify a custom system prompt.
         If not provided, the default system prompt will be used.

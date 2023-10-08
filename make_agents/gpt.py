@@ -21,6 +21,21 @@ from tenacity import (
 
 
 def get_completion_func(model: str = "gpt-4", **kwargs) -> callable:
+    """Returns a function for getting completions from OpenAI.
+    Can specify more parameters, e.g. temperature, etc. via kwargs, see:
+    https://platform.openai.com/docs/api-reference/introduction?lang=python
+
+    Parameters
+    ----------
+    model : str, optional
+        The chat model to use, by default "gpt-4".
+
+    Returns
+    -------
+    callable
+        A function that is used to get completions from OpenAI, to drive agents.
+    """
+
     @retry(
         retry=retry_if_exception_type(
             (openai.error.Timeout, openai.error.RateLimitError)
