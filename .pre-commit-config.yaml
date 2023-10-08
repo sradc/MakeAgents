@@ -17,13 +17,13 @@ repos:
       language: system
       files: \.(py|ipynb)$
       pass_filenames: false
-    - id: make-docs
-      name: Generate docs using Sphinx
-      entry: bash -c 'make docs'
-      # track docs/ but ignore docs/_sources
-      files: ^docs/((?!_sources).)*$
-      language: system
-      pass_filenames: false
+    # - id: make-docs
+    #   name: Generate docs using Sphinx
+    #   entry: bash -c 'make docs'
+    #   # track docs/ but ignore docs/_sources
+    #   files: ^docs/((?!_sources).)*$
+    #   language: system
+    #   pass_filenames: false
     - id: make-readme
       name: Generate readme from ipynb...
       entry: bash -c 'make readme'
