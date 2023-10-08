@@ -440,7 +440,6 @@ for messages in ma.run_agent(action_graph):
 
 ### Contributing
 
-- Please consider contributing cool examples, (I'd like to create a `./community_examples` dir).
 - For any ideas/comments/suggestions, create a GitHub issue, or comment in a relevant issue.
 - For the development of the framework itself, the aspiration is take an "example driven" development approach. 
     I.e. find compelling examples where a feature / change would be helpful before adding it.
