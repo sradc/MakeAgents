@@ -42,11 +42,11 @@ import make_agents as ma
 
 #### Action function, `message_user`
 
-We'll use this in multiple of the examples below. It allows the agent to message the user, and get a response.
-
 An action function must have at most one argument, and that argument must be annotated with a Pydantic model. 
 The function's name, its docstring, and the Pydantic model, is provided to the LLM, and should be considered as part of the promping strategy.
 It's not recommended to annotate the arg in the docstring, since it is done via the Pydantic model already.
+
+This action function allows the agent to message the user, and get a response.
 
 
 ```python
@@ -100,6 +100,60 @@ for messages in ma.run_agent(action_graph):
 print(f"Retrieved user_name: {json.loads(messages[-1]['content'])}")
 ```
 
+
+### Action graph
+
+
+
+    
+![png](https://raw.githubusercontent.com/sradc/MakeAgents/master/README_files/README_5_1.png)
+    
+
+
+
+### Agent execution log
+
+
+    call `get_task_instructions`: <no arguments>
+    
+    `get_task_instructions` result: "Your task is to get both the user's first and last name."
+    
+    call `message_user`: {
+      "message": "Hello, may I have your first name please?"
+    }
+    
+    `message_user` result: "Sure, it's Bill"
+    
+    call `select_next_func`: {
+      "thought_process": "I have obtained the user's first name, now I need to get their last name. So, I will call the 'message_user' function again to request for their last name.",
+      "next_function": "message_user"
+    }
+    
+    `select_next_func` result: "message_user"
+    
+    call `message_user`: {
+      "message": "Nice to meet you, Bill. Could you please tell me your last name as well?"
+    }
+    
+    `message_user` result: "BoBaggins"
+    
+    call `select_next_func`: {
+      "thought_process": "Now that I have both the first and last name of the user, the next step is to record both. I will accomplish this task by calling the 'record_first_and_last_name' function.",
+      "next_function": "record_first_and_last_name"
+    }
+    
+    `select_next_func` result: "record_first_and_last_name"
+    
+    call `record_first_and_last_name`: {
+      "first_name": "Bill",
+      "last_name": "BoBaggins"
+    }
+    
+    `record_first_and_last_name` result: {"first_name": "Bill", "last_name": "BoBaggins"}
+    
+    Retrieved user_name: {'first_name': 'Bill', 'last_name': 'BoBaggins'}
+
+
 ### Example 2: A system assistant <span style="color:red"> — _dangerous_</span>
 
 In this example, the agent is allowed to run bash commands on your system, and read the results... Validation is implemented, so please make sure you understand the command before allowing it to run.
@@ -149,6 +203,66 @@ for messages in ma.run_agent(action_graph):
             f"Please validate the bash command, before pressing enter to continue. Command: `{command}`"
         )
 ```
+
+
+### Action graph
+
+
+
+    
+![png](https://raw.githubusercontent.com/sradc/MakeAgents/master/README_files/README_8_1.png)
+    
+
+
+
+### Agent execution log
+
+
+    call `get_task_instructions`: <no arguments>
+    
+    `get_task_instructions` result: "Your task is help the user with their computer system, until they ask to end the chat. Please give the user only the relevant information."
+    
+    call `message_user`: {
+      "message": "Hello! How may I assist you with your computer system today?"
+    }
+    
+    `message_user` result: "Hi, how much space do I have left on my hard drive?"
+    
+    call `select_next_func`: {
+      "thought_process": "To check the available space on the user's hard drive, I can utilize the bash command 'df -h'. Therefore, the 'run_bash_command' function should be the next one to use.",
+      "next_function": "run_bash_command"
+    }
+    
+    `select_next_func` result: "run_bash_command"
+    
+    call `run_bash_command`: {
+      "plan": "To check the available space on the hard drive",
+      "command": "df -h"
+    }
+    
+    `run_bash_command` result: {"stout": "Filesystem      Size  Used Avail Use% Mounted on\nudev            7.8G     0  7.8G   0% /dev\ntmpfs           1.6G  2.0M  1.6G   1% /run\n/dev/sda5       909G  790G   82G  91% /\ntmpfs           7.8G     0  7.8G   0% /dev/shm\ntmpfs           5.0M  4.0K  5.0M   1% /run/lock\ntmpfs           7.8G     0  7.8G   0% /sys/fs/cgroup\n/dev/loop0      128K  128K     0 100% /snap/bare/5\n/dev/loop1      304M  304M     0 100% /snap/code/141\n/dev/loop2      304M  304M     0 100% /snap/code/142\n/dev/loop3      106M  106M     0 100% /snap/core/16091\n/dev/loop4      106M  106M     0 100% /snap/core/16202\n/dev/loop5       56M   56M     0 100% /snap/core18/2785\n/dev/loop6       56M   56M     0 100% /snap/core18/2790\n/dev/loop7       64M   64M     0 100% /snap/core20/1974\n/dev/loop8       64M   64M     0 100% /snap/core20/2015\n/dev/loop9       74M   74M     0 100% /snap/core22/858\n/dev/loop10      74M   74M     0 100% /snap/core22/864\n/dev/loop11     219M  219M     0 100% /snap/gnome-3-34-1804/90\n/dev/loop12     219M  219M     0 100% /snap/gnome-3-34-1804/93\n/dev/loop14     350M  350M     0 100% /snap/gnome-3-38-2004/143\n/dev/loop13     350M  350M     0 100% /snap/gnome-3-38-2004/140\n/dev/loop16     497M  497M     0 100% /snap/gnome-42-2204/132\n/dev/loop15     497M  497M     0 100% /snap/gnome-42-2204/141\n/dev/loop18      92M   92M     0 100% /snap/gtk-common-themes/1535\n/dev/loop17      82M   82M     0 100% /snap/gtk-common-themes/1534\n/dev/loop19      46M   46M     0 100% /snap/snap-store/638\n/dev/loop20      13M   13M     0 100% /snap/snap-store/959\n/dev/loop21      41M   41M     0 100% /snap/snapd/19993\n/dev/loop22      41M   41M     0 100% /snap/snapd/20092\n/dev/loop23     2.3M  2.3M     0 100% /snap/starship/1766\n/dev/loop24     3.0M  3.0M     0 100% /snap/starship/2049\n/dev/loop25     296M  296M     0 100% /snap/vlc/2344\n/dev/loop26     321M  321M     0 100% /snap/vlc/3078\ntmpfs           1.6G   16K  1.6G   1% /run/user/125\ntmpfs           1.6G  4.0K  1.6G   1% /run/user/1000\n", "stderr": ""}
+    
+    call `select_next_func`: {
+      "thought_process": "The bash command has been successfully executed and returned the status of the user's hard drive space. The relevant information here for the user is that on the root directory ('/') which is of size 909G, 790G is used and 82G is still available. Currently, 91% of the storage space is used. Therefore, the 'message_user' function should be the next one to use, to provide this relevant information to the user.",
+      "next_function": "message_user"
+    }
+    
+    `select_next_func` result: "message_user"
+    
+    call `message_user`: {
+      "message": "You have a total of 909GB on your root directory. Currently, about 790GB is used, leaving you with approximately 82GB remaining. This means you've used about 91% of your total space."
+    }
+    
+    `message_user` result: "thanks, that's all"
+    
+    call `select_next_func`: {
+      "thought_process": "The user has indicated that they are finished and needs no further assistance. Therefore, the 'End' function should be the next one to use.",
+      "next_function": "End"
+    }
+    
+    `select_next_func` result: "End"
+    
+
 
 ### Example 3: A dynamic action graph to carry out validation before making actions accessible
 
@@ -217,11 +331,111 @@ for messages in ma.run_agent(action_graph):
     ma.bonus.pretty_print(messages[-1])
 ```
 
+
+### Agent execution log
+
+
+    call `get_task_instructions`: <no arguments>
+    
+    `get_task_instructions` result: "Get the users email address, and validate it."
+    
+    call `message_user`: {
+      "message": "Could you please share your email address?"
+    }
+    
+    `message_user` result: "sure, it's bob@bill.io"
+    
+    call `select_next_func`: {
+      "thought_process": "Now that I have the users email, I can proceed to validate it. The best function to use for this is 'send_validation_email'.",
+      "next_function": "send_validation_email"
+    }
+    
+    `select_next_func` result: "send_validation_email"
+    
+    call `send_validation_email`: {
+      "users_email_address": "bob@bill.io"
+    }
+    
+    `send_validation_email` result: {"status": "error", "description": "Email address must end with `.com`"}
+    
+    call `select_next_func`: {
+      "thought_process": "The validation email could not be sent because the users email address does not end with '.com'. I will ask the user to provide a valid email address",
+      "next_function": "message_user"
+    }
+    
+    `select_next_func` result: "message_user"
+    
+    call `message_user`: {
+      "message": "I'm sorry, but your email address must end with '.com'. Could you please provide a valid email address?"
+    }
+    
+    `message_user` result: "Ah, no prob, it's bob@bill.com"
+    
+    call `select_next_func`: {
+      "thought_process": "Now that I have received a correct email ending with '.com', I should now send the validation email. The best function to use is 'send_validation_email'.",
+      "next_function": "send_validation_email"
+    }
+    
+    `select_next_func` result: "send_validation_email"
+    
+    call `send_validation_email`: {
+      "users_email_address": "bob@bill.com"
+    }
+    
+    `send_validation_email` result: {"status": "success", "description": "Validation code sent"}
+    
+    call `message_user`: {
+      "message": "A validation code has been sent to your email. Could you please provide the code to confirm your email address?"
+    }
+    
+    `message_user` result: "uh, I think 1234"
+    
+    call `select_next_func`: {
+      "thought_process": "The user has provided a validation code. I should now check if the code is correct using the 'check_validation_code' function.",
+      "next_function": "check_validation_code"
+    }
+    
+    `select_next_func` result: "check_validation_code"
+    
+    call `check_validation_code`: {
+      "validation_code": "1234"
+    }
+    
+    `check_validation_code` result: {"status": "error", "description": "Validation code must be 6 digits"}
+    
+    call `select_next_func`: {
+      "thought_process": "The validation code provided by the user is invalid as it is not 6 digits. I should ask the user again to provide the correct validation code",
+      "next_function": "message_user"
+    }
+    
+    `select_next_func` result: "message_user"
+    
+    call `message_user`: {
+      "message": "I'm sorry, but the validation code should be 6 digits. Could you please check your email and provide the correct validation code?"
+    }
+    
+    `message_user` result: "123456"
+    
+    call `select_next_func`: {
+      "thought_process": "The user has provided a 6 digits validation code. I will now validate it using the 'check_validation_code' function.",
+      "next_function": "check_validation_code"
+    }
+    
+    `select_next_func` result: "check_validation_code"
+    
+    call `check_validation_code`: {
+      "validation_code": "123456"
+    }
+    
+    `check_validation_code` result: {"status": "success", "description": "Validation code correct"}
+    
+
+
 ### Notes:
 
 - Prompting has a big impact on the performance of the agent. Action function names, Pydantic models and docstrings can all be considered part of the prompting strategy.
 - The current preferred way to deal with exceptions due to the model not providing correct function args is to modify the prompts / action graph, to reduce the error rate.
-- "gpt-4" is used by default, and does perform better than "gpt-3.5-turbo", (at least with the current set up and prompts).
+- "gpt-4" is used by default, and performs better than "gpt-3.5-turbo", (at least with the current set up and prompts).
 
 
 ### Contributing
