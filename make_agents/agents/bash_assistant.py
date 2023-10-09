@@ -7,6 +7,11 @@ from pydantic import BaseModel, Field
 import make_agents as ma
 
 
+@ma.action
+def get_task_instructions():
+    return "Your task is help the user with their computer system, using Bash, until they ask to end the chat. Please give the user only the relevant information."
+
+
 class MessageUserArg(BaseModel):
     message: str = Field(description="Message to send user")
 
@@ -18,11 +23,6 @@ def message_user(arg: MessageUserArg):
     while response == "":
         response = input(arg.message + "\n>  ").strip()
     return response
-
-
-@ma.action
-def get_task_instructions():
-    return "Your task is help the user with their computer system, using Bash, until they ask to end the chat. Please give the user only the relevant information."
 
 
 class RunBashCommandArg(BaseModel):

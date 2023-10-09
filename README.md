@@ -58,6 +58,11 @@ import make_agents as ma
 # First define the action functions
 
 
+@ma.action
+def get_task_instructions():
+    return "Your task is to get both the user's first and last name."
+
+
 class MessageUserArg(BaseModel):
     message: str = Field(description="Message to send user")
 
@@ -69,11 +74,6 @@ def message_user(arg: MessageUserArg):
     while response == "":
         response = input(arg.message).strip()
     return response
-
-
-@ma.action
-def get_task_instructions():
-    return "Your task is to get both the user's first and last name."
 
 
 class LogNameArg(BaseModel):
