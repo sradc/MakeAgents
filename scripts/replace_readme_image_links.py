@@ -7,14 +7,16 @@ if __name__ == "__main__":
     GITHUB_PATH = "sradc/MakeAgents/main"
 
     with open(FILE_PATH, "r") as file:
-        data = file.read()
+        text = file.read()
 
     # Find links referencing README_files/ and replace them with absolute links
     pattern = r"(README_files/.*\.(png|jpg))"
     replacement = r"https://raw.githubusercontent.com/" + GITHUB_PATH + r"/\1"
+    text = re.sub(pattern, replacement, text)
 
-    # Substitute the pattern with the replacement
-    new_data = re.sub(pattern, replacement, data)
+    pattern = r"(static/.*\.(png|jpg))"
+    replacement = r"https://raw.githubusercontent.com/" + GITHUB_PATH + r"/\1"
+    text = re.sub(pattern, replacement, text)
 
     with open(FILE_PATH, "w") as file:
-        file.write(new_data)
+        file.write(text)
